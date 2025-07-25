@@ -173,6 +173,86 @@
   </div>
 </template>
 
+<!-- P0: 基本資料表單模板 -->
+<template id="tpl-text-field">
+  <div class="mb-3">
+    <label class="form-label field-name"></label>
+    <input type="text" class="form-control">
+    <span class="field-required text-danger" style="display: none;">*</span>
+  </div>
+</template>
+
+<template id="tpl-select-field">
+  <div class="mb-3">
+    <label class="form-label field-name"></label>
+    <select class="form-control">
+      <option value="">請選擇...</option>
+    </select>
+    <span class="field-required text-danger" style="display: none;">*</span>
+  </div>
+</template>
+
+<template id="tpl-radio-field">
+  <div class="mb-3">
+    <label class="form-label field-name"></label>
+    <div class="radio-container"></div>
+    <span class="field-required text-danger" style="display: none;">*</span>
+  </div>
+</template>
+
+<template id="tpl-checkbox-group">
+  <div class="mb-3">
+    <label class="form-label field-name"></label>
+    <div class="checkbox-container"></div>
+    <span class="field-required text-danger" style="display: none;">*</span>
+  </div>
+</template>
+
+<!-- P0: Radio 一步作答問題模板 -->
+<template id="tpl-radio-question">
+  <div class="question-card card shadow-sm">
+    <div class="card-body">
+      <div class="row align-items-center">
+        <div class="col-md-5">
+          <h5 class="left-title text-primary"></h5>
+        </div>
+        <div class="col-md-2 text-center">
+          <strong>影響程度</strong>
+        </div>
+        <div class="col-md-5">
+          <h5 class="right-title text-success"></h5>
+        </div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-12">
+          <div class="d-flex justify-content-center flex-wrap">
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="score" value="0">
+              <label class="form-check-label">0<br><small>無影響</small></label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="score" value="1">
+              <label class="form-check-label">1<br><small>低影響</small></label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="score" value="2">
+              <label class="form-check-label">2<br><small>中影響</small></label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="score" value="3">
+              <label class="form-check-label">3<br><small>高影響</small></label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="score" value="4">
+              <label class="form-check-label">4<br><small>極高影響</small></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <template id="progressTemplate">
   <div class="progress">
     <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
@@ -199,10 +279,12 @@
 <script src="lib/bootstrap.bundle.min.js"></script>
 
 <!-- 外部JavaScript模組 - Phase 5 壓縮分段載入順序 -->
+<script src="js/logger.js"></script>
 <script src="js/compression-utils.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/secure-renderer.js"></script>
 <script src="js/lazy-renderer.js"></script>
+<script src="js/radio-renderer.js"></script>
 <script src="js/data-handler.js"></script>
 <script src="js/survey-logic.js"></script>
 <script src="js/ui-handler.js"></script>

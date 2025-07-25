@@ -50,6 +50,115 @@ class SecureRenderer {
     });
   }
 
+  // P0: 渲染基本資料表單欄位
+  renderField(fieldConfig) {
+    const { 類型: type, 編號: id, 名稱: name, 選項: options, 必填: required } = fieldConfig;
+    
+    let templateId;
+    switch (type) {
+      case 'text':
+      case 'email':
+        templateId = 'tpl-text-field';
+        break;
+      case 'select':
+        templateId = 'tpl-select-field';
+        break;
+      case 'radio':
+        templateId = 'tpl-radio-field';
+        break;
+      case 'checkbox':
+        templateId = 'tpl-checkbox-group';
+        break;
+      default:
+        console.warn(`未支援的欄位類型: ${type}`);
+        templateId = 'tpl-text-field';
+    }
+
+    const fieldElement = this.createElement(templateId, {
+      'field-id': id,
+      'field-name': name,
+      'field-required': required
+    });
+
+    if (!fieldElement) {
+      console.error(`無法創建欄位: ${id}`);
+      return document.createElement('div');
+    }
+
+    // 設置欄位屬性
+    const input = fieldElement.querySelector('input, select');
+    if (input) {
+      input.name = id;
+      input.id = id;
+      if (required) input.required = true;
+      if (type === 'email') input.type = 'email';
+    }
+
+    // 處理選項（select, radio, checkbox）
+    if (options && options.length > 0) {
+      this.renderFieldOptions(fieldElement, type, id, options);
+    }
+
+    return fieldElement;
+  }
+
+  // 渲染欄位選項
+  renderFieldOptions(fieldElement, type, fieldId, options) {
+    if (type === 'select') {
+      const select = fieldElement.querySelector('select');
+      options.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option;
+        optionElement.textContent = option;
+        select.appendChild(optionElement);
+      });
+    } else if (type === 'radio') {
+      const container = fieldElement.querySelector('.radio-container');
+      options.forEach((option, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'form-check';
+        
+        const input = document.createElement('input');
+        input.type = 'radio';
+        input.className = 'form-check-input';
+        input.name = fieldId;
+        input.value = option;
+        input.id = `${fieldId}_${index}`;
+        
+        const label = document.createElement('label');
+        label.className = 'form-check-label';
+        label.htmlFor = `${fieldId}_${index}`;
+        label.textContent = option;
+        
+        wrapper.appendChild(input);
+        wrapper.appendChild(label);
+        container.appendChild(wrapper);
+      });
+    } else if (type === 'checkbox') {
+      const container = fieldElement.querySelector('.checkbox-container');
+      options.forEach((option, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'form-check';
+        
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.className = 'form-check-input';
+        input.name = `${fieldId}[]`;
+        input.value = option;
+        input.id = `${fieldId}_${index}`;
+        
+        const label = document.createElement('label');
+        label.className = 'form-check-label';
+        label.htmlFor = `${fieldId}_${index}`;
+        label.textContent = option;
+        
+        wrapper.appendChild(input);
+        wrapper.appendChild(label);
+        container.appendChild(wrapper);
+      });
+    }
+  }
+
   // 安全設置屬性
   setAttributes(element, attributes) {
     Object.keys(attributes).forEach(key => {

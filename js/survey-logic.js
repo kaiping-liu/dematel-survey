@@ -2,6 +2,13 @@
 
 // 渲染問卷題目
 function render() {
+  // P0: 使用新的 Radio 一步作答渲染器
+  if (typeof renderWithRadio === 'function') {
+    renderWithRadio();
+    return;
+  }
+  
+  // 備用：原版渲染邏輯
   const el = document.getElementById('main');
   
   if (idx >= questions.length) {

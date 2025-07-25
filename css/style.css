@@ -813,3 +813,57 @@ body {
     min-width: 45px;
   }
 }
+
+/* P1: RWD 微調 - 手機寬度 < 576px */
+@media (max-width: 575.98px) {
+  /* P0: Radio 問題卡片手機優化 */
+  .question-card {
+    flex-direction: column !important;
+  }
+  
+  .question-card .row {
+    flex-direction: column;
+  }
+  
+  .question-card .col-md-5,
+  .question-card .col-md-2 {
+    margin-bottom: 15px;
+  }
+  
+  /* Radio 選項分兩行顯示 */
+  .question-card .form-check-inline {
+    display: block !important;
+    margin-bottom: 10px;
+    margin-right: 0 !important;
+  }
+  
+  .question-card .d-flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  
+  /* 基本資料表單手機優化 */
+  .mb-3 .col-md-6 {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* 按鈕群組手機優化 */
+  .d-flex.justify-content-between {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  
+  .d-flex.justify-content-between .btn {
+    width: 100% !important;
+  }
+  
+  /* 進度條文字大小調整 */
+  .text-center h4 {
+    font-size: 1.2rem !important;
+  }
+  
+  .text-center p {
+    font-size: 0.9rem !important;
+  }
+}

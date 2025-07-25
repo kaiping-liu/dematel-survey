@@ -754,3 +754,128 @@ function download() {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// P0: 實作 loadBasicInfoForm 函數
+function loadBasicInfoForm() {
+  console.log('Loading basic info form...');
+  
+  if (!window.surveyStructure || !window.surveyStructure.basic) {
+    console.error('Survey structure not loaded or missing basic info');
+    return;
+  }
+
+  const form = document.getElementById('basicInfoForm');
+  if (!form) {
+    console.error('Basic info form container not found');
+    return;
+  }
+
+  // 清空現有內容
+  form.innerHTML = '';
+
+  // 創建安全渲染器實例
+  const renderer = new SecureRenderer();
+
+  // 載入已保存的基本資料
+  const savedBasicInfo = loadBasicInfoFromLocal();
+
+  // 渲染每個欄位
+  window.surveyStructure.basic.forEach(fieldConfig => {
+    try {
+      const fieldElement = renderer.renderField(fieldConfig);
+      
+      // 設置已保存的值
+      if (savedBasicInfo && savedBasicInfo[fieldConfig.編號]) {
+        const value = savedBasicInfo[fieldConfig.編號];
+        const input = fieldElement.querySelector('input, select');
+        
+        if (input) {
+          if (fieldConfig.類型 === 'checkbox') {
+            // 處理 checkbox 陣列值
+            if (Array.isArray(value)) {
+              const checkboxes = fieldElement.querySelectorAll('input[type="checkbox"]');
+              checkboxes.forEach(checkbox => {
+                if (value.includes(checkbox.value)) {
+                  checkbox.checked = true;
+                }
+              });
+            }
+          } else if (fieldConfig.類型 === 'radio') {
+            // 處理 radio 值
+            const radio = fieldElement.querySelector(`input[value="${value}"]`);
+            if (radio) radio.checked = true;
+          } else {
+            // 處理一般輸入值
+            input.value = value;
+          }
+        }
+      }
+
+      // 添加事件監聽器
+      const inputs = fieldElement.querySelectorAll('input, select');
+      inputs.forEach(input => {
+        const eventType = input.type === 'checkbox' || input.type === 'radio' ? 'change' : 'input';
+        input.addEventListener(eventType, saveBasicInfoToLocal);
+      });
+
+      // 添加到表單
+      form.appendChild(fieldElement);
+      
+    } catch (error) {
+      console.error(`Error rendering field ${fieldConfig.編號}:`, error);
+    }
+  });
+
+  console.log('Basic info form loaded successfully');
+}
+
+// P0: 保存基本資料到本地儲存
+function saveBasicInfoToLocal() {
+  const form = document.getElementById('basicInfoForm');
+  if (!form) return;
+
+  const basicInfo = {};
+  
+  // 收集所有欄位數據
+  window.surveyStructure.basic.forEach(fieldConfig => {
+    const fieldId = fieldConfig.編號;
+    const fieldType = fieldConfig.類型;
+    
+    if (fieldType === 'checkbox') {
+      // 處理 checkbox 群組
+      const checkboxes = form.querySelectorAll(`input[name="${fieldId}[]"]:checked`);
+      basicInfo[fieldId] = Array.from(checkboxes).map(cb => cb.value);
+    } else if (fieldType === 'radio') {
+      // 處理 radio 群組
+      const radio = form.querySelector(`input[name="${fieldId}"]:checked`);
+      if (radio) {
+        basicInfo[fieldId] = radio.value;
+      }
+    } else {
+      // 處理一般輸入欄位
+      const input = form.querySelector(`[name="${fieldId}"]`);
+      if (input && input.value) {
+        basicInfo[fieldId] = input.value;
+      }
+    }
+  });
+
+  // 儲存到 localStorage
+  try {
+    localStorage.setItem('dematel_basic_info', JSON.stringify(basicInfo));
+    console.log('Basic info saved:', basicInfo);
+  } catch (error) {
+    console.error('Failed to save basic info:', error);
+  }
+}
+
+// P0: 從本地儲存載入基本資料
+function loadBasicInfoFromLocal() {
+  try {
+    const saved = localStorage.getItem('dematel_basic_info');
+    return saved ? JSON.parse(saved) : {};
+  } catch (error) {
+    console.error('Failed to load basic info:', error);
+    return {};
+  }
+}
