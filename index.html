@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>DEMATEL 問卷調查系統</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <!-- Bootstrap 5.3 CSS -->
+  <link rel="stylesheet" href="lib/bootstrap.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Third-party libraries -->
+  <script src="lib/qrcode.min.js"></script>
+  <script src="lib/lz-string.min.js"></script>
+  <script src="lib/spark-md5.min.js"></script>
+  <script src="lib/pako.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>DEMATEL 問卷調查系統</h1>
+    <div class="progress mt-3" style="height: 8px;">
+      <div class="progress-bar progress-bar-striped" role="progressbar" id="progressFill" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+    <div class="progress-text mt-2" id="progressText">準備開始...</div>
+  </div>
+
+  <div class="content">
+    <!-- 說明頁面 -->
+    <div class="intro-section" id="introSection" style="display: block;">
+      <div class="form-title" id="introTitle">問卷說明</div>
+      <div class="intro-content" id="introContent">
+        <p>親愛的受訪者，您好！</p>
+        <p>本研究旨在探討數位時代下各項能力之間的影響關係，以建構完整的能力框架。</p>
+        <p><strong>本問卷分為三個部分：</strong></p>
+        <p style="margin-left: 15px;">1. 基本資料：請填寫您的個人基本資訊</p>
+        <p style="margin-left: 15px;">2. 準則比較：評估各項能力指標之間的影響關係</p>
+        <p style="margin-left: 15px;">3. 構面比較：評估各大能力構面之間的影響關係</p>
+        <br>
+        <p><strong>填寫說明：</strong></p>
+        <p style="margin-left: 15px;">• 請仔細閱讀每個題目的說明</p>
+        <p style="margin-left: 15px;">• 根據您的實際經驗進行判斷</p>
+        <p style="margin-left: 15px;">• 如果兩項能力無關，請選擇「兩者無關」</p>
+        <p style="margin-left: 15px;">• 如果有影響關係，請選擇影響方向並評估影響程度(1=低影響, 4=高影響)</p>
+        <p style="margin-left: 15px;">• 全程約需15-20分鐘</p>
+        <br>
+        <p>您的回答對研究非常重要，所有資料僅供學術研究使用，絕對保密。</p>
+        <p>感謝您的參與！</p>
+      </div>
+      <div class="control-buttons">
+        <button type="button" class="btn btn-primary btn-lg" id="introNextBtn" onclick="showBasicInfo()">開始填寫</button>
+      </div>
+    </div>
+
+    <!-- 基本資料填寫 -->
+    <div class="survey-section" id="basicInfoSection" style="display: none;">
+      <div class="form-title">第一部分：基本資料填寫</div>
+      <div class="intro-content" style="background: #fff9f9; border-left: 4px solid #d4a373;">
+        <div id="basicInfoForm"></div>
+        <div class="control-buttons">
+          <button type="button" class="btn btn-success btn-lg" id="basicNextBtn" onclick="proceedToSurvey()">開始問卷 →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 問卷部分 -->
+    <div class="survey-section" id="surveySection">
+      <div id="main"></div>
+    </div>
+
+    <!-- 完成頁面 -->
+    <div class="finish-section" id="finishSection">
+      <div class="form-title">問卷填寫完成</div>
+      <div class="intro-content" style="background: #fff9f9; border-left: 4px solid #28a745;">
+        <div class="finish-title">🎉 問卷填寫完成！</div>
+        <p>感謝您參與本次問卷調查，您的意見對我們非常重要！</p>
+        <p>請點選下方按鈕產生QR Code，並將所有QR Code截圖回傳給研究人員。</p>
+        
+        <div class="qr-section">
+          <div class="d-flex justify-content-center gap-3 mb-4 flex-wrap">
+            <button type="button" class="btn btn-outline-primary btn-lg" onclick="validateAndDownload()">下載結果 (JSON)</button>
+            <button type="button" class="btn btn-warning btn-lg" onclick="validateAndShowQRCode()">產生 QRCode</button>
+          </div>
+          
+          <div id="qrcode-wrap" style="display:none;">
+            <div id="qrcode-segments" class="qr-segments"></div>
+            <button type="button" class="btn btn-secondary mt-3" onclick="hideQRCode()">收起 QR Code</button>
+            
+            <!-- 驗證區域 -->
+            <div class="verification-area">
+              <h3>QR Code 驗證與還原</h3>
+              <textarea class="verification-input" id="verificationInput" placeholder="請貼入一個或多個 base64 編碼的片段（每行一個）&#10;格式範例：&#10;{&quot;i&quot;:0,&quot;total&quot;:2,&quot;part&quot;:&quot;eJy...&quot;}&#10;{&quot;i&quot;:1,&quot;total&quot;:2,&quot;part&quot;:&quot;xyz...&quot;}"></textarea>
+              <button class="verify-btn" onclick="verifyAndRestore()">驗證並還原</button>
+              <div class="result-area" id="verificationResult"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 3: 安全渲染模板 -->
+<template id="questionTemplate">
+  <div class="card">
+    <div class="question-header">
+      <div class="question-number"></div>
+      <div class="question-title"></div>
+    </div>
+    <div class="question-description"></div>
+    <div class="comparison-matrix">
+      <div class="comparison-header">
+        <div class="factor-a"></div>
+        <div class="comparison-scale">
+          <span class="scale-label">影響程度</span>
+          <div class="scale-options">
+            <label class="scale-option">
+              <input type="radio" name="influence" value="none">
+              <span class="scale-text">兩者無關</span>
+            </label>
+            <label class="scale-option">
+              <input type="radio" name="influence" value="a2b-1">
+              <span class="scale-text">A→B 低影響(1)</span>
+            </label>
+            <label class="scale-option">
+              <input type="radio" name="influence" value="a2b-2">
+              <span class="scale-text">A→B 中低影響(2)</span>
+            </label>
+            <label class="scale-option">
+              <input type="radio" name="influence" value="a2b-3">
+              <span class="scale-text">A→B 中高影響(3)</span>
+            </label>
+            <label class="scale-option">
+              <input type="radio" name="influence" value="a2b-4">
+              <span class="scale-text">A→B 高影響(4)</span>
+            </label>
+            <label class="scale-option">
+              <input type="radio" name="influence" value="b2a-1">
+              <span class="scale-text">B→A 低影響(1)</span>
+            </label>
+            <label class="scale-option">
+              <input type="radio" name="influence" value="b2a-2">
+              <span class="scale-text">B→A 中低影響(2)</span>
+            </label>
+            <label class="scale-option">
+              <input type="radio" name="influence" value="b2a-3">
+              <span class="scale-text">B→A 中高影響(3)</span>
+            </label>
+            <label class="scale-option">
+              <input type="radio" name="influence" value="b2a-4">
+              <span class="scale-text">B→A 高影響(4)</span>
+            </label>
+          </div>
+        </div>
+        <div class="factor-b"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="basicInfoTemplate">
+  <div class="form-group">
+    <label class="form-label"></label>
+    <input type="text" class="form-control" required>
+  </div>
+</template>
+
+<template id="basicInfoSelectTemplate">
+  <div class="form-group">
+    <label class="form-label"></label>
+    <select class="form-control" required>
+      <option value="">請選擇...</option>
+    </select>
+  </div>
+</template>
+
+<template id="progressTemplate">
+  <div class="progress">
+    <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+      <span class="progress-text"></span>
+    </div>
+  </div>
+</template>
+
+<!-- 動畫期間的禁用覆蓋層 -->
+<div id="animationOverlay" class="animation-overlay"></div>
+
+<!-- 診斷工具 (開發用，正式版可移除) -->
+<div id="debugPanel" style="position: fixed; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; font-size: 12px; z-index: 10000; display: none; max-width: 250px;">
+  <div>Phase 5 診斷工具</div>
+  <button onclick="toggleDebugPanel()" style="margin: 5px 0; padding: 2px 5px;">隱藏</button>
+  <button onclick="checkLocalStorage()" style="margin: 5px 0; padding: 2px 5px;">檢查儲存</button>
+  <button onclick="clearDebugStorage()" style="margin: 5px 0; padding: 2px 5px;">清除儲存</button>
+  <button onclick="testCompressionPerformance()" style="margin: 5px 0; padding: 2px 5px; background: #007bff; color: white; border: none; border-radius: 2px;">壓縮測試</button>
+  <div id="debugInfo"></div>
+</div>
+<button onclick="toggleDebugPanel()" style="position: fixed; bottom: 10px; right: 10px; z-index: 9999; padding: 5px 10px; background: #333; color: white; border: none; border-radius: 3px; font-size: 12px;">Debug</button>
+
+<!-- Bootstrap 5.3 JS -->
+<script src="lib/bootstrap.bundle.min.js"></script>
+
+<!-- 外部JavaScript模組 - Phase 5 壓縮分段載入順序 -->
+<script src="js/compression-utils.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/secure-renderer.js"></script>
+<script src="js/lazy-renderer.js"></script>
+<script src="js/data-handler.js"></script>
+<script src="js/survey-logic.js"></script>
+<script src="js/ui-handler.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>

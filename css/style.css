@@ -1,0 +1,815 @@
+/* Phase 4: DEMATEL 問卷系統樣式 - Bootstrap 整合版 */
+
+/* CSS 變數定義 - 保留原有色彩系統 */
+:root {
+  --dematel-primary: #d4a373;
+  --dematel-secondary: #ccd5ae;
+  --dematel-background: #fefae0;
+  --dematel-content-bg: #fff9f9;
+  --dematel-border: #e9edc9;
+  --dematel-text: #333;
+  --dematel-success: #28a745;
+}
+
+/* 全域設定 */
+* { 
+  box-sizing: border-box; 
+}
+
+body { 
+  font-family: "Segoe UI", "微軟正黑體", Arial, sans-serif; 
+  font-size: small;
+  background: var(--dematel-background);
+  margin: 0;
+  padding: 20px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  max-width: 900px;
+  width: 100%;
+  background: var(--dematel-background);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 2px solid var(--dematel-secondary);
+}
+
+.header {
+  background: var(--dematel-secondary);
+  color: var(--dematel-text);
+  padding: 20px 30px;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.8em;
+  font-weight: 600;
+}
+
+.header p {
+  margin: 10px 0 0 0;
+  opacity: 0.9;
+  font-size: 1em;
+}
+
+/* Phase 4: Bootstrap Progress Bar 樣式 (取代自定義進度條) */
+.progress {
+  background-color: rgba(188, 108, 37, 0.2) !important;
+  border-radius: 4px !important;
+}
+
+.progress-text {
+  margin-top: 10px;
+  font-size: 0.9em;
+  opacity: 0.9;
+  text-align: center;
+  line-height: 1.4;
+  color: var(--dematel-text);
+}
+
+.content {
+  padding: 30px;
+  color: var(--dematel-text);
+}
+
+/* Phase 4: Bootstrap 按鈕自定義樣式 */
+.btn-primary {
+  background-color: var(--dematel-primary) !important;
+  border-color: var(--dematel-secondary) !important;
+  color: var(--dematel-text) !important;
+}
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: var(--dematel-secondary) !important;
+  border-color: var(--dematel-primary) !important;
+  color: var(--dematel-text) !important;
+}
+
+.btn-outline-primary {
+  color: var(--dematel-primary) !important;
+  border-color: var(--dematel-primary) !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--dematel-primary) !important;
+  border-color: var(--dematel-primary) !important;
+  color: white !important;
+}
+
+.btn-success {
+  background-color: var(--dematel-success) !important;
+  border-color: var(--dematel-success) !important;
+}
+
+.btn-warning {
+  background-color: var(--dematel-primary) !important;
+  border-color: var(--dematel-secondary) !important;
+  color: var(--dematel-text) !important;
+}
+
+.btn-warning:hover {
+  background-color: var(--dematel-secondary) !important;
+  border-color: var(--dematel-primary) !important;
+  color: var(--dematel-text) !important;
+}
+
+/* 說明頁面 */
+.intro-section {
+  margin-bottom: 30px;
+}
+
+.intro-content {
+  background: var(--dematel-content-bg);
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 25px;
+  line-height: 1.8;
+  border-left: 4px solid var(--dematel-primary);
+}
+
+.intro-content p {
+  margin-bottom: 15px;
+  color: var(--dematel-text);
+}
+
+.intro-content ul {
+  margin: 15px 0;
+  padding-left: 20px;
+}
+
+.intro-content li {
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.intro-content strong {
+  color: #1e3c72;
+  font-weight: 600;
+}
+
+/* 表單相關 - 使用 CSS 變數 */
+.form-section {
+  margin-bottom: 30px;
+}
+
+.form-title {
+  font-size: 1.4em;
+  color: var(--dematel-text);
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--dematel-border);
+  font-weight: 600;
+  text-align: left;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--dematel-text);
+  text-align: left;
+}
+
+.form-label.required::after {
+  content: " *";
+  color: var(--dematel-primary);
+}
+
+.form-input, .form-select, .form-control {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid var(--dematel-border);
+  border-radius: 8px;
+  font-size: 1em;
+  transition: border-color 0.3s ease;
+  background: white;
+  color: var(--dematel-text);
+}
+
+.form-input:focus, .form-select:focus, .form-control:focus {
+  outline: none;
+  border-color: var(--dematel-primary);
+  box-shadow: 0 0 0 0.2rem rgba(212, 163, 115, 0.25);
+}
+
+.form-input.error, .form-select.error {
+  border-color: var(--dematel-primary);
+}
+
+.form-description {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 5px;
+}
+
+.checkbox-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.checkbox-item:hover {
+  background-color: #f8f9fa;
+}
+
+.checkbox-item input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+/* 問卷部分 */
+.survey-section {
+  display: none;
+  text-align: center;
+}
+
+.phase-title {
+  font-size: 1.3em;
+  color: #333;
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding: 15px;
+  background: #e9edc9;
+  border-radius: 12px;
+  border: 2px solid #ccd5ae;
+}
+
+.step-title {
+  font-size: 1.2em;
+  margin-bottom: 25px;
+  font-weight: 600;
+  color: #333;
+  text-align: left;
+}
+
+.desc-row {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 30px;
+  margin-bottom: 25px;
+}
+
+.desc-block {
+  flex: 1;
+  max-width: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.block-title {
+  font-size: 1.2em;
+  color: #1e3c72;
+  background: linear-gradient(135deg, #f0f4fa 0%, #e0e8f0 100%);
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 8px 20px;
+  margin-bottom: 12px;
+  text-align: center;
+  border: 2px solid #e0e8f0;
+}
+
+.block-vs {
+  color: #666;
+  font-size: 1.3em;
+  margin: 0 15px;
+  font-weight: 600;
+  align-self: center;
+}
+
+.desc-content {
+  text-align: center;
+  line-height: 1.6;
+  color: #555;
+}
+
+.relation-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.btn, .score-btn {
+  border: none;
+  border-radius: 10px;
+  padding: 15px 20px;
+  background: #e9edc9;
+  color: #333;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+  width: 100%;
+  text-align: center;
+  font-weight: 500;
+  border: 2px solid #ccd5ae;
+}
+
+.btn:hover, .score-btn:hover {
+  background: #ccd5ae;
+  color: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn.selected, .score-btn.selected {
+  background: #d4a373 !important;
+  color: #333 !important;
+  font-weight: 600 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 163, 115, 0.3);
+  border-color: #d4a373 !important;
+}
+
+.score-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  justify-content: center;
+}
+
+.score-title {
+  margin-bottom: 8px;
+  color: #e55353;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+/* 分數選擇區域樣式 */
+.score-section {
+  background: #fefcf3;
+  border: 2px solid #d4a373;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 2px 8px rgba(212, 163, 115, 0.2);
+}
+
+.selected-relation {
+  background: #e9edc9;
+  color: #333;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.95em;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+/* 高亮動畫 */
+@keyframes pulseHighlight {
+  0% { box-shadow: 0 2px 8px rgba(212, 163, 115, 0.2); }
+  50% { box-shadow: 0 4px 20px rgba(212, 163, 115, 0.6); }
+  100% { box-shadow: 0 2px 8px rgba(212, 163, 115, 0.2); }
+}
+
+/* 懸浮視窗樣式 */
+.score-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-modal.modal-show {
+  opacity: 1;
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  background: #fefcf3;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  transform: scale(0.8);
+  transition: transform 0.3s ease;
+}
+
+.score-modal.modal-show .modal-content {
+  transform: scale(1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px 15px;
+  border-bottom: 2px solid #e9edc9;
+}
+
+.modal-title {
+  margin: 0;
+  color: #333;
+  font-size: 1.3em;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.8em;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: #e9edc9;
+  color: #333;
+}
+
+.modal-body {
+  padding: 20px 25px 25px;
+}
+
+.modal-relation-info {
+  background: #e9edc9;
+  color: #333;
+  padding: 12px 20px;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 20px;
+  font-weight: 600;
+  font-size: 1.1em;
+}
+
+.modal-score-section {
+  margin-bottom: 25px;
+}
+
+.modal-score-section:last-child {
+  margin-bottom: 0;
+}
+
+.modal-score-title {
+  margin-bottom: 12px;
+  color: #e55353;
+  font-size: 1.1em;
+  font-weight: 600;
+  text-align: center;
+}
+
+.modal-score-group {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.modal-score-btn {
+  padding: 15px 20px;
+  border: 2px solid #e9edc9;
+  border-radius: 8px;
+  background: #faedcd;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.2em;
+  font-weight: 600;
+  min-width: 50px;
+}
+
+.modal-score-btn:hover {
+  background: #e9edc9;
+  border-color: #ccd5ae;
+  transform: translateY(-2px);
+}
+
+.modal-score-btn.selected {
+  background: #d4a373 !important;
+  color: #333 !important;
+  font-weight: 700 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 163, 115, 0.4);
+  border-color: #d4a373 !important;
+}
+
+.progress {
+  color: #666;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 0.95em;
+}
+
+/* 控制按鈕 */
+/* 保留控制按鈕容器樣式 */
+.control-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 30px;
+  justify-content: center;
+}
+
+/* 完成頁面 */
+.finish-section {
+  display: none;
+}
+
+.finish-title {
+  font-size: 1.6em;
+  color: #28a745;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.qr-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+/* QR Code 相關樣式 */
+.qr-segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+  margin: 30px auto;
+  max-width: 1000px;
+}
+
+.qr-segment {
+  text-align: center;
+  min-width: 250px;
+  max-width: 300px;
+  padding: 20px;
+  background: #fefae0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid #ccd5ae;
+}
+
+.qr-segment h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+
+.qr-segment > div {
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.verification-area {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.verification-area h3 {
+  color: #1e3c72;
+  margin-bottom: 12px;
+}
+
+.verification-input {
+  width: 100%;
+  height: 120px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.verify-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.verify-btn:hover {
+  background: #218838;
+}
+
+.result-area {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 8px;
+  font-family: monospace;
+  font-size: 0.8em;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* 動畫覆蓋層 */
+.animation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  z-index: 9998;
+  display: none;
+  pointer-events: all;
+}
+
+/* 頁面轉場動畫樣式 */
+.page-transition-out {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.page-transition-in {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.page-transition-out-reverse {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.page-transition-in-reverse {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* RWD 響應式設計 */
+@media (max-width: 768px) {
+  body { 
+    padding: 10px; 
+    align-items: flex-start;
+  }
+  
+  .container { 
+    border-radius: 15px;
+    margin: 10px auto;
+  }
+  
+  .header { 
+    padding: 15px 20px; 
+  }
+  
+  .header h1 { 
+    font-size: 1.5em; 
+  }
+  
+  .content { 
+    padding: 20px; 
+  }
+  
+  .desc-row {
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+  }
+  
+  .desc-block {
+    width: 100%;
+    max-width: none;
+  }
+  
+  .block-vs { 
+    margin: 10px 0; 
+  }
+  
+  .checkbox-group {
+    grid-template-columns: 1fr;
+  }
+  
+  .control-buttons {
+    flex-direction: column;
+  }
+  
+  .control-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 5px;
+    align-items: flex-start;
+  }
+  
+  .container {
+    width: calc(100% - 10px);
+    margin: 5px auto;
+  }
+  
+  .header { 
+    padding: 12px 15px; 
+  }
+  
+  .header h1 { 
+    font-size: 1.3em; 
+  }
+  
+  .content { 
+    padding: 15px; 
+  }
+  
+  .btn, .score-btn { 
+    padding: 12px 15px; 
+    font-size: 1em; 
+  }
+  
+  .desc-row {
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .desc-block {
+    width: 100%;
+    text-align: center;
+  }
+  
+  /* 手機版分數選擇區域 */
+  .selected-relation {
+    text-align: center;
+    font-size: 0.9em;
+  }
+  
+  /* 手機版懸浮視窗 */
+  .modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .modal-header {
+    padding: 15px 20px 10px;
+  }
+  
+  .modal-title {
+    font-size: 1.1em;
+  }
+  
+  .modal-body {
+    padding: 15px 20px 20px;
+  }
+  
+  .modal-score-group {
+    gap: 10px;
+  }
+  
+  .modal-score-btn {
+    padding: 12px 15px;
+    font-size: 1.1em;
+    min-width: 45px;
+  }
+}
