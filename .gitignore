@@ -1,0 +1,34 @@
+# 編輯器和IDE檔案
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 作業系統檔案
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 暫存檔案
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# 日誌檔案
+*.log
+
+# Node.js (如果將來需要)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 測試檔案
+test-*.html
+*-test.html
+debug*.html
+optimization*.html
+qr-*.html
+minimal*.html

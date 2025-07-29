@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEMATEL 問卷系統</title>
+    <link rel="stylesheet" href="lib/fonts/noto-sans-tc.css">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- App Shell -->
+    <header class="app-shell">
+        <div class="app-shell__title">DEMATEL 問卷系統</div>
+        <div class="app-shell__progress">
+            <div class="progress-bar" id="progressBar" style="--percent: 0"></div>
+            <div class="progress-text" id="progressText">構面 0/0 題 | 準則 0/0 題 | 完成度 0%</div>
+        </div>
+    </header>
+
+    <!-- View Container -->
+    <main class="view-container" id="viewContainer">
+        <!-- Intro View -->
+        <section class="view view--intro" id="viewIntro">
+            <div class="intro-card">
+                <h1 class="intro-card__title" id="introTitle">載入中...</h1>
+                <div class="intro-card__content" id="introContent">
+                    請稍候，系統正在初始化...
+                </div>
+                <button class="btn btn--primary intro-card__button" id="startBtn" disabled tabindex="-1">
+                    開始填寫
+                </button>
+            </div>
+        </section>
+
+        <!-- Basic Info View -->
+        <section class="view view--basic" id="viewBasic" style="display: none;">
+            <div class="basic-form">
+                <h2 class="basic-form__title">基本資料</h2>
+                <form class="basic-form__form" id="basicForm">
+                    <div class="form-fields" id="basicFields">
+                        <!-- 動態生成基本資料欄位 -->
+                    </div>
+                    <div class="basic-form__actions">
+                        <button type="submit" class="btn btn--primary btn--full-width" id="nextToQuestionBtn" tabindex="-1">開始問卷</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Question View -->
+        <section class="view view--question" id="viewQuestion" style="display: none;">
+            <div class="question-card">
+                <div class="question-card__header">
+                    <div class="question-card__type" id="questionType">準則比較</div>
+                </div>
+                
+                <div class="question-card__content">
+                    <div class="question-pair">
+                        <div class="question-comparison">
+                            <div class="question-pair__item question-pair__item--left">
+                                <div class="item-dimension" id="leftItemDimension" style="display: none;"></div>
+                                <h3 class="item__title" id="leftItemTitle">項目 A</h3>
+                                <p class="item__description" id="leftItemDescription">項目說明</p>
+                            </div>
+                            
+                            <div class="vs-divider">vs.</div>
+                            
+                            <div class="question-pair__item question-pair__item--right">
+                                <div class="item-dimension" id="rightItemDimension" style="display: none;"></div>
+                                <h3 class="item__title" id="rightItemTitle">項目 B</h3>
+                                <p class="item__description" id="rightItemDescription">項目說明</p>
+                            </div>
+                        </div>
+                        
+                        <div class="question-pair__controls">
+                            <div class="direction-buttons">
+                                <button class="direction-btn direction-btn--none" data-direction="none" aria-label="兩者無關" tabindex="-1">
+                                    <span class="direction-btn__icon">×</span>
+                                    <span class="direction-btn__text">兩者無關</span>
+                                </button>
+                                
+                                <button class="direction-btn direction-btn--to" data-direction="to" aria-label="A影響B" tabindex="-1">
+                                    <span class="direction-btn__icon">→</span>
+                                    <span class="direction-btn__text" id="toButtonText">載入中...</span>
+                                </button>
+                                
+                                <button class="direction-btn direction-btn--from" data-direction="from" aria-label="B影響A" tabindex="-1">
+                                    <span class="direction-btn__icon">←</span>
+                                    <span class="direction-btn__text" id="fromButtonText">載入中...</span>
+                                </button>
+                                
+                                <button class="direction-btn direction-btn--bi" data-direction="bi" aria-label="相互影響" tabindex="-1">
+                                    <span class="direction-btn__icon">↔</span>
+                                    <span class="direction-btn__text">相互影響</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="question-card__footer">
+                    <div class="question-navigation">
+                        <button class="btn btn--secondary" id="prevQuestionBtn" disabled tabindex="-1">上一題</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Finish View -->
+        <section class="view view--finish" id="viewFinish" style="display: none;">
+            <div class="finish-card">
+                <div class="finish-card__icon">✓</div>
+                <h2 class="finish-card__title">問卷填寫完成！</h2>
+                <div class="finish-card__survey-id">
+                    <span class="survey-id-label">問卷編號：</span>
+                    <span class="survey-id-value" id="surveyIdDisplay"></span>
+                </div>
+                <p class="finish-card__description">
+                    感謝您的參與！您的回答對我們的研究非常重要。
+                </p>
+                
+                <div class="finish-card__actions">
+                    <button class="btn btn--primary" id="downloadBtn" tabindex="-1">
+                        <span class="btn__icon">⬇</span>
+                        下載結果
+                    </button>
+                    <button class="btn btn--secondary" id="generateQRBtn" tabindex="-1">
+                        <span class="btn__icon">⬛</span>
+                        產生 QR Code
+                    </button>
+                    <button class="btn btn--outline" id="restartSurveyBtn" tabindex="-1">重新開始</button>
+                </div>
+                
+                <div class="qr-container" id="qrContainer" style="display: none;">
+                    <h3>請將以下QR Code全部截圖並回傳!</h3>
+                    <div class="qr-codes" id="qrCodes"></div>
+                    <div class="qr-navigation" id="qrNavigation" style="display: none;">
+                        <button class="btn btn--small" id="prevQRBtn" tabindex="-1">上一張</button>
+                        <span id="qrProgress">1/1</span>
+                        <button class="btn btn--small" id="nextQRBtn" tabindex="-1">下一張</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Score Modal -->
+    <div class="modal" id="scoreModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal__backdrop"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 class="modal__title" id="modalTitle">評估影響程度</h3>
+                <button class="modal__close" id="closeModalBtn" aria-label="關閉" tabindex="-1">&times;</button>
+            </div>
+            
+            <div class="modal__body">
+                <div class="score-inputs" id="scoreInputs">
+                    <div class="score-input-group">
+                        <div class="score-question" id="scoreQuestion1">
+                            <div class="score-question__label" id="scoreLabel1">影響程度</div>
+                            <div class="score-question__subtitle" id="scoreSubtitle1">(1=低影響, 4=高影響)</div>
+                        </div>
+                        <div class="score-buttons" id="scoreButtons1">
+                            <button type="button" class="score-btn" data-score="1" data-group="1" tabindex="-1">1</button>
+                            <button type="button" class="score-btn" data-score="2" data-group="1" tabindex="-1">2</button>
+                            <button type="button" class="score-btn" data-score="3" data-group="1" tabindex="-1">3</button>
+                            <button type="button" class="score-btn" data-score="4" data-group="1" tabindex="-1">4</button>
+                        </div>
+                    </div>
+                    
+                    <div class="score-input-group" id="scoreGroup2" style="display: none;">
+                        <div class="score-question" id="scoreQuestion2">
+                            <div class="score-question__label" id="scoreLabel2">反向影響程度</div>
+                            <div class="score-question__subtitle" id="scoreSubtitle2">(1=低影響, 4=高影響)</div>
+                        </div>
+                        <div class="score-buttons" id="scoreButtons2">
+                            <button type="button" class="score-btn" data-score="1" data-group="2" tabindex="-1">1</button>
+                            <button type="button" class="score-btn" data-score="2" data-group="2" tabindex="-1">2</button>
+                            <button type="button" class="score-btn" data-score="3" data-group="2" tabindex="-1">3</button>
+                            <button type="button" class="score-btn" data-score="4" data-group="2" tabindex="-1">4</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resume/Continue Modal -->
+    <div class="modal" id="resumeContinueModal" role="dialog" aria-modal="true" aria-labelledby="resumeContinueTitle">
+        <div class="modal__backdrop"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 class="modal__title" id="resumeContinueTitle">檢測到未完成的問卷</h3>
+            </div>
+            
+            <div class="modal__body">
+                <p>您可以選擇：</p>
+                <div class="resume-options">
+                    <p><strong>繼續填寫</strong> - 從上次中斷的地方繼續</p>
+                    <p><strong>重新開始</strong> - 清除所有資料重新填寫</p>
+                </div>
+            </div>
+            
+            <div class="modal__footer">
+                <button class="btn btn--secondary" id="restartFromResumeBtn" tabindex="-1">重新開始</button>
+                <button class="btn btn--primary" id="continueBtn" tabindex="-1">繼續填寫</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Config Changed Modal -->
+    <div class="modal" id="configChangedModal" role="dialog" aria-modal="true" aria-labelledby="configChangedTitle">
+        <div class="modal__backdrop"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 class="modal__title" id="configChangedTitle">設定檔已變更</h3>
+            </div>
+            
+            <div class="modal__body">
+                <div class="config-changed-notice">
+                    <p><strong>⚠️ 重要提醒</strong></p>
+                    <p>系統偵測到問卷設定檔已更新，為確保資料一致性，您必須重新開始填寫問卷。</p>
+                    <p>所有之前的作答資料將被清除。</p>
+                </div>
+            </div>
+            
+            <div class="modal__footer">
+                <button class="btn btn--primary" id="restartFromConfigChangeBtn" tabindex="-1">重新開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Panel -->
+    <div class="debug-panel" id="debugPanel">
+        <button class="debug-panel__toggle" id="debugToggle" tabindex="-1">🐞</button>
+        <div class="debug-panel__content" id="debugContent" style="display: none;">
+            <div class="debug-panel__header">
+                <h3>Debug 資訊</h3>
+                <button class="btn btn--small btn--danger" id="clearDataBtn" tabindex="-1">清空資料</button>
+            </div>
+            <div class="debug-panel__body">
+                <pre id="debugData">載入中...</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="lib/qrcode.min.js"></script>
+    <script src="lib/pako.min.js"></script>
+    
+    <!-- 全域鍵盤導航攔截器 -->
+    <script>
+    /**
+     * 讓整頁鍵盤導航失效，只保留文字輸入與常用編輯鍵
+     * 允許的元素：input / textarea / [contenteditable]
+     * 允許的鍵：英數字、符號、Enter、Backspace、Delete、方向鍵、Home/End 等
+     */
+    (function () {
+      // 依需要再放寬
+      const ALLOWED_KEYS = new Set([
+        // 基本文字輸入 & 常用編輯
+        'Backspace', 'Delete', 'Enter', 'Tab',              // Tab 保留「插入字元」功能
+        'Home', 'End', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown',
+        // 數字、字母、符號由 key.length === 1 判定
+      ]);
+
+      function isEditable(el) {
+        return (
+          el instanceof HTMLInputElement ||
+          el instanceof HTMLTextAreaElement ||
+          (el.isContentEditable && el.getAttribute('contenteditable') !== 'false')
+        );
+      }
+
+      window.addEventListener(
+        'keydown',
+        (e) => {
+          if (!isEditable(e.target)) {
+            // 非輸入框 → 一律阻擋
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+          // 在輸入框內：僅放行文字鍵與允許表
+          if (
+            e.key.length === 1 ||           // 單字元（字母、數字、符號）
+            ALLOWED_KEYS.has(e.key)
+          ) {
+            return; // 允許
+          }
+          e.preventDefault();               // 其餘如 F1 ~ F12、PageUp、Space、Esc… 一律攔
+        },
+        true // capture 階段先擋掉，確保最優先
+      );
+    })();
+    </script>
+    
+    <!-- External Libraries -->
+    <script src="lib/qrcode.min.js"></script>
+    <script src="lib/pako.min.js"></script>
+    
+    <!-- Main Application -->
+    <script src="js/app.js"></script>
+</body>
+</html>
