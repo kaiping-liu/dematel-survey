@@ -2704,6 +2704,17 @@ async function waitForLibraries() {
 // 初始化應用程式
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // 處理移動端視窗高度問題
+        function setVH() {
+            const vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        
+        // 初始設定和監聽視窗大小變化
+        setVH();
+        window.addEventListener('resize', setVH);
+        window.addEventListener('orientationchange', setVH);
+        
         // 先等待所有必要的庫載入完成
         await waitForLibraries();
         

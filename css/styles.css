@@ -5,6 +5,13 @@
   -webkit-tap-highlight-color: transparent !important;
 }
 
+/* 支援移動端安全區域和動態視窗高度 */
+:root {
+  /* 動態視窗高度，避免移動端地址欄和工具欄影響 */
+  --vh: 1vh;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* 全面禁用鍵盤導航：徹底移除所有焦點框 */
 button,
 .btn,
@@ -81,12 +88,12 @@ html {
   --clr-shadow-hover: rgba(0, 0, 0, 0.15);
   
   --font-base: 'Noto Sans TC', sans-serif;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
+  --font-size-sm: 0.75rem;     /* 原: 0.875rem */
+  --font-size-base: 0.875rem;  /* 原: 1rem */
+  --font-size-lg: 1rem;        /* 原: 1.125rem */
+  --font-size-xl: 1.125rem;    /* 原: 1.25rem */
+  --font-size-2xl: 1.25rem;    /* 原: 1.5rem */
+  --font-size-3xl: 1.5rem;     /* 原: 1.875rem */
   
   --radius-sm: 4px;
   --radius-md: 8px;
@@ -196,6 +203,8 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--spacing-xl) var(--spacing-lg);
+  /* 為移動設備底部工具列預留空間 */
+  padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 60px));
 }
 
 .view {
@@ -643,7 +652,7 @@ body {
 }
 
 .finish-card__icon {
-  font-size: 4rem;
+  font-size: 3rem;  /* 原: 4rem */
   color: var(--clr-success);
   margin-bottom: var(--spacing-lg);
 }
@@ -1340,5 +1349,34 @@ body {
     outline: 2px solid var(--clr-accent) !important;
     outline-offset: 2px !important;
     box-shadow: none !important;
+  }
+}
+
+/* 移動端底部工具列專用優化 */
+@media (max-width: 768px) {
+  /* 針對 iOS Safari 的底部工具列 */
+  @supports (-webkit-touch-callout: none) {
+    .view-container {
+      padding-bottom: calc(var(--spacing-xl) + var(--safe-area-bottom) + 80px);
+    }
+  }
+  
+  /* 針對 Android Chrome 的底部工具列 */
+  @supports not (-webkit-touch-callout: none) {
+    .view-container {
+      padding-bottom: calc(var(--spacing-xl) + var(--safe-area-bottom) + 70px);
+    }
+  }
+  
+  /* 確保按鈕區域有足夠的底部間距 */
+  .basic-form__actions,
+  .finish-card__actions,
+  .question-navigation {
+    margin-bottom: calc(var(--spacing-xl) + 20px);
+  }
+  
+  /* QR Code 容器也需要額外空間 */
+  .qr-container {
+    margin-bottom: calc(var(--spacing-xl) + 20px);
   }
 }
