@@ -48,6 +48,10 @@ class DEMATELSurvey {
         // 生成問卷唯一編號
         this.surveyId = this.generateUUID();
         
+        // 時間記錄
+        this.startTime = null;     // 開始填寫時間（讀完說明頁開始填的時間）
+        this.endTime = null;       // 問卷結束時間
+        
         this.initializeApp();
     }
 
@@ -56,27 +60,19 @@ class DEMATELSurvey {
      */
     async initializeApp() {
         try {
-            console.log('開始初始化 DEMATEL Survey...');
-            
             // 載入設定檔
-            console.log('正在載入設定檔...');
             await this.loadConfig();
-            console.log('設定檔載入完成');
             
             // 初始化 UI
-            console.log('正在初始化 UI...');
             this.initializeUI();
-            console.log('UI 初始化完成');
             
             // 設置事件監聽器
-            console.log('正在設置事件監聽器...');
             this.setupEventListeners();
-            console.log('事件監聽器設置完成');
             
             // 初始化進度顯示
             this.updateProgress();
             
-            console.log('DEMATEL Survey 初始化完成');
+            console.log('✅ DEMATEL Survey 初始化完成');
             
         } catch (error) {
             console.error('初始化失敗:', error);
@@ -90,12 +86,9 @@ class DEMATELSurvey {
      */
     async loadConfig() {
         try {
-            console.log('正在載入 dematel-structure.json...');
-            
             // 強制重新抓取，禁用快取
             const timestamp = Date.now();
             const url = `dematel-structure.json?t=${timestamp}`;
-            console.log('請求 URL:', url);
             
             const response = await fetch(url, {
                 cache: 'no-cache',
@@ -105,36 +98,25 @@ class DEMATELSurvey {
                     'Expires': '0'
                 }
             });
-            console.log('Response status:', response.status);
-            console.log('Response ok:', response.ok);
             
             if (!response.ok) {
                 throw new Error(`無法載入設定檔: HTTP ${response.status} ${response.statusText}`);
             }
             
-            console.log('正在解析 JSON...');
             const configText = await response.text();
             this.config = JSON.parse(configText);
-            console.log('JSON 解析完成，config:', this.config);
             
             // 計算新的 MD5
             const newMD5 = await this.calculateMD5(configText);
-            console.log('新檔案 MD5:', newMD5);
             
             // 驗證設定檔
-            console.log('正在驗證設定檔...');
             this.validateConfig();
-            console.log('設定檔驗證完成');
             
             // 計算資料雜湊
-            console.log('正在計算資料雜湊...');
             this.calculateDataHash();
-            console.log('資料雜湊計算完成');
             
             // 產生問卷
-            console.log('正在產生問卷題目...');
             await this.generateQuestions();
-            console.log('問卷題目產生完成');
             
             // 檢查 MD5 變化（必須在問題生成之後）
             await this.checkConfigChanges(newMD5);
@@ -164,7 +146,6 @@ class DEMATELSurvey {
         
         if (!storedMD5) {
             // 第一次載入，直接儲存 MD5 並顯示介紹頁面
-            console.log('第一次載入設定檔，儲存 MD5');
             localStorage.setItem('dematel_config_md5', newMD5);
             this.currentMd5 = newMD5;
             this.showView('intro');
@@ -173,12 +154,10 @@ class DEMATELSurvey {
         
         if (storedMD5 === newMD5) {
             // MD5 相同，檢查是否有未完成的問卷
-            console.log('設定檔未變更');
             this.currentMd5 = newMD5;
             await this.showConfigUnchangedDialog();
         } else {
             // MD5 不同，設定檔已變更
-            console.log('設定檔已變更');
             await this.showConfigChangedDialog(newMD5);
         }
     }
@@ -338,14 +317,8 @@ class DEMATELSurvey {
             }
         }
         
-        // 隨機排序（如果需要）
-        // this.shuffleQuestions();
-        
         // 設定題庫完成旗標
         this.isQuestionGenerationComplete = true;
-        console.log('✅ 問卷題目生成完成，共', this.questions.length, '題');
-        
-        console.log(`產生 ${this.questions.length} 道題目`);
     }
 
     /**
@@ -372,8 +345,6 @@ class DEMATELSurvey {
                 }
             }
         }
-        
-        console.log(`收集到 ${allCriteria.length} 個準則`);
         
         // 使用生成器函數來實現懶加載
         const questionGenerator = this.createCriteriaQuestionGenerator(allCriteria);
@@ -450,7 +421,6 @@ class DEMATELSurvey {
                 // 快取結果
                 this.questionCache.set(type, questions);
                 
-                console.log(`${type} 問題生成完成，共 ${questions.length} 題`);
                 resolve(questions);
             }, 0);
         });
@@ -507,29 +477,6 @@ class DEMATELSurvey {
     /**
      * 隨機排序題目
      */
-    shuffleQuestions() {
-        // Fisher-Yates 洗牌演算法
-        let seed = parseInt(localStorage.getItem('dematel_shuffle_seed')) || Date.now();
-        const rng = this.seededRandom(seed);
-        
-        for (let i = this.questions.length - 1; i > 0; i--) {
-            const j = Math.floor(rng() * (i + 1));
-            [this.questions[i], this.questions[j]] = [this.questions[j], this.questions[i]];
-        }
-        
-        localStorage.setItem('dematel_shuffle_seed', seed.toString());
-    }
-
-    /**
-     * 種子隨機數產生器
-     */
-    seededRandom(seed) {
-        return function() {
-            seed = (seed * 9301 + 49297) % 233280;
-            return seed / 233280;
-        };
-    }
-
     /**
      * 初始化 UI
      */
@@ -627,8 +574,6 @@ class DEMATELSurvey {
                 contentEl.innerHTML = content.map(line => {
                     if (line.trim() === '') {
                         return '<br>';
-                    } else if (line.startsWith('•')) {
-                        return `<li>${line.substring(1).trim()}</li>`;
                     } else {
                         return `<p>${line}</p>`;
                     }
@@ -750,14 +695,8 @@ class DEMATELSurvey {
         const storedAnswers = localStorage.getItem('dematel_answers');
         const storedSurveyId = localStorage.getItem('dematel_survey_id');
         const storedConfigMd5 = localStorage.getItem('dematel_config_md5');
-        
-        console.log('🔍 檢查現有資料:');
-        console.log('存儲的階段:', storedPhase);
-        console.log('存儲的索引:', storedIndex);
-        console.log('存儲的基本資料:', storedBasicInfo ? '存在' : '不存在');
-        console.log('存儲的答案:', storedAnswers ? '存在' : '不存在');
-        console.log('存儲的問卷編號:', storedSurveyId);
-        console.log('存儲的配置 MD5:', storedConfigMd5);
+        const storedStartTime = localStorage.getItem('dematel_start_time');
+        const storedEndTime = localStorage.getItem('dematel_end_time');
         
         // 恢復配置 MD5
         if (storedConfigMd5) {
@@ -772,17 +711,20 @@ class DEMATELSurvey {
             localStorage.setItem('dematel_survey_id', this.surveyId);
         }
         
+        // 恢復時間戳
+        if (storedStartTime && storedStartTime !== '') {
+            this.startTime = parseInt(storedStartTime);
+        }
+        if (storedEndTime && storedEndTime !== '') {
+            this.endTime = parseInt(storedEndTime);
+        }
+        
         if (storedPhase && storedBasicInfo) {
             // 載入已存資料，但不顯示 UI（由 Modal 系統處理）
             this.currentPhase = storedPhase;
             this.currentIndex = parseInt(storedIndex) || 0;
             this.basicInfo = JSON.parse(storedBasicInfo);
             this.answers = storedAnswers ? JSON.parse(storedAnswers) : {};
-            
-            console.log('✅ 資料載入完成:');
-            console.log('當前階段:', this.currentPhase);
-            console.log('當前索引:', this.currentIndex);
-            console.log('問卷編號:', this.surveyId);
         }
     }
 
@@ -886,8 +828,6 @@ class DEMATELSurvey {
             this.generateQRCode();
         } else if (id === 'restartSurveyBtn') {
             this.restartSurvey();
-        } else if (id === 'debugToggle') {
-            this.toggleDebugPanel();
         } else if (id === 'clearDataBtn') {
             this.clearAllData();
         } else if (classList.contains('score-btn')) {
@@ -981,6 +921,9 @@ class DEMATELSurvey {
      * 開始問卷
      */
     startSurvey() {
+        // 記錄開始填寫時間
+        this.startTime = Date.now(); // 使用 timestamp
+        
         this.currentPhase = 'basic';
         this.currentIndex = 0;
         this.showView('basic');
@@ -991,18 +934,12 @@ class DEMATELSurvey {
      * 繼續填寫問卷
      */
     async resumeSurvey() {
-        console.log('📍 resumeSurvey 開始執行');
-        console.log('當前階段:', this.currentPhase);
-        console.log('當前題目索引:', this.currentIndex);
-        
         // 確保題庫生成完成
         if (!this.isQuestionGenerationComplete) {
-            console.log('⏳ 等待題庫生成完成...');
             await new Promise(resolve => {
                 const checkInterval = setInterval(() => {
                     if (this.isQuestionGenerationComplete) {
                         clearInterval(checkInterval);
-                        console.log('✅ 題庫生成完成，繼續恢復問卷');
                         resolve();
                     }
                 }, 50);
@@ -1014,38 +951,29 @@ class DEMATELSurvey {
         
         // 跳轉到對應頁面
         if (this.currentPhase === 'intro') {
-            console.log('當前階段為 intro，但有儲存資料，應該恢復到實際進度');
             // 如果 currentPhase 是 intro 但有儲存的資料，說明資料載入有問題
             // 重新載入一次資料
             this.checkExistingData();
-            console.log('重新載入後，當前階段:', this.currentPhase, '當前索引:', this.currentIndex);
             
             // 根據重新載入的資料決定顯示哪個頁面
             if (this.currentPhase === 'basic') {
-                console.log('顯示基本資料頁面');
                 this.showView('basic');
             } else if (this.currentPhase === 'criteria' || this.currentPhase === 'dimension') {
-                console.log('顯示問卷頁面，階段:', this.currentPhase, '題目:', this.currentIndex);
                 this.showView('question');
                 this.updateQuestionView();
             } else if (this.currentPhase === 'finish') {
-                console.log('顯示完成頁面');
                 this.showView('finish');
             }
         } else if (this.currentPhase === 'basic') {
-            console.log('顯示基本資料頁面');
             this.showView('basic');
         } else if (this.currentPhase === 'criteria' || this.currentPhase === 'dimension') {
-            console.log('顯示問卷頁面，階段:', this.currentPhase, '題目:', this.currentIndex);
             this.showView('question');
             this.updateQuestionView();
         } else if (this.currentPhase === 'finish') {
-            console.log('顯示完成頁面');
             this.showView('finish');
         }
         
         this.updateProgress();
-        console.log('📍 resumeSurvey 執行完成');
     }
 
     /**
@@ -1055,6 +983,10 @@ class DEMATELSurvey {
         if (confirm('確定要重新開始嗎？所有已填寫的資料將會清除。')) {
             // 清除所有資料
             this.clearAllData();
+            
+            // 重置時間記錄
+            this.startTime = null;
+            this.endTime = null;
             
             // 重置應用程式狀態到初始狀態
             this.currentPhase = 'intro';
@@ -1090,8 +1022,6 @@ class DEMATELSurvey {
         // 進入問卷階段 - 改成先構面後準則
         this.currentPhase = this.getDimensionQuestions().length > 0 ? 'dimension' : 'criteria';
         this.currentIndex = 0;
-        
-        console.log(`開始 ${this.currentPhase} 階段，共 ${this.getCurrentQuestions().length} 題`);
         
         this.showView('question');
         this.updateQuestionView();
@@ -1223,7 +1153,10 @@ class DEMATELSurvey {
             this.saveAnswer(direction, null, null);
             setTimeout(() => {
                 this.clearAllSelections();
-                this.nextQuestion();
+                // 確保動畫保護也適用於延遲執行
+                if (!this.isAnimating) {
+                    this.nextQuestion();
+                }
             }, 300); // 縮短延遲時間
         } else {
             // 需要評分，顯示 Modal
@@ -1345,6 +1278,11 @@ class DEMATELSurvey {
      * 自動確認評分並進入下一題
      */
     autoConfirmScore() {
+        // 防止重複點擊和動畫衝突
+        if (this.isAnimating) {
+            return;
+        }
+        
         const score1 = this.selectedScore1;
         const score2 = document.getElementById('scoreGroup2').style.display !== 'none' 
             ? this.selectedScore2 
@@ -1359,6 +1297,11 @@ class DEMATELSurvey {
      * 確認分數
      */
     confirmScore() {
+        // 防止重複點擊和動畫衝突
+        if (this.isAnimating) {
+            return;
+        }
+        
         const score1 = this.selectedScore1;
         const score2 = document.getElementById('scoreGroup2').style.display !== 'none' 
             ? this.selectedScore2 
@@ -1390,6 +1333,11 @@ class DEMATELSurvey {
      * 下一題
      */
     nextQuestion() {
+        // 防止重複調用
+        if (this.isAnimating) {
+            return;
+        }
+        
         const currentQuestions = this.getCurrentQuestions();
         
         if (this.currentIndex < currentQuestions.length - 1) {
@@ -1402,6 +1350,18 @@ class DEMATELSurvey {
                 this.currentIndex = 0;
             } else {
                 // 完成所有題目
+                this.endTime = Date.now(); // 使用 timestamp
+                
+                // 驗證題目完成度
+                const expectedTotalQuestions = this.questions.length;
+                const actualAnsweredQuestions = Object.keys(this.answers).length;
+                
+                console.log(`📊 問卷完成驗證: 預期 ${expectedTotalQuestions} 題, 實際回答 ${actualAnsweredQuestions} 題`);
+                
+                if (actualAnsweredQuestions < expectedTotalQuestions) {
+                    console.warn(`⚠️ 問卷不完整! 還有 ${expectedTotalQuestions - actualAnsweredQuestions} 題未回答`);
+                }
+                
                 this.currentPhase = 'finish';
                 this.showView('finish');
                 this.updateProgress();
@@ -1418,6 +1378,11 @@ class DEMATELSurvey {
      * 上一題
      */
     previousQuestion() {
+        // 防止重複調用
+        if (this.isAnimating) {
+            return;
+        }
+        
         if (this.currentIndex > 0) {
             this.currentIndex--;
         } else if (this.currentPhase === 'criteria') {
@@ -1426,7 +1391,6 @@ class DEMATELSurvey {
             this.currentIndex = this.getDimensionQuestions().length - 1;
         } else if (this.currentPhase === 'dimension') {
             // 構面比較是第一階段，無法再往前
-            console.log('已經是第一題，無法再往前');
             return;
         }
         
@@ -1581,38 +1545,13 @@ class DEMATELSurvey {
      * 更新問卷視圖
      */
     updateQuestionView() {
-        console.log('📋 updateQuestionView 開始');
-        console.log('當前階段:', this.currentPhase);
-        console.log('當前索引:', this.currentIndex);
-        
-        // 💡 每次題目載入就強制重置所有按鈕狀態 - 這是根本解決方案
+        // 每次題目載入就強制重置所有按鈕狀態
         this.resetAllButtonStates();
-        
-        // 調試：檢查當前階段的題目列表
-        const currentQuestions = this.getCurrentQuestions();
-        console.log('🔍 當前階段題目總數:', currentQuestions.length);
-        console.log('🔍 要顯示的題目索引:', this.currentIndex);
-        
-        if (currentQuestions.length > 0) {
-            console.log('🔍 前5題預覽:');
-            currentQuestions.slice(0, Math.min(5, currentQuestions.length)).forEach((q, idx) => {
-                console.log(`  ${idx}: ${q.itemA.name} vs ${q.itemB.name}${idx === this.currentIndex ? ' ← 當前' : ''}`);
-            });
-        }
         
         const question = this.getCurrentQuestion();
         if (!question) {
-            console.error('❌ 無法獲取當前題目');
-            console.log('currentPhase:', this.currentPhase);
-            console.log('currentIndex:', this.currentIndex);
-            console.log('criteriaQuestions length:', this.getCriteriaQuestions()?.length);
-            console.log('dimensionQuestions length:', this.getDimensionQuestions()?.length);
-            console.log('isQuestionGenerationComplete:', this.isQuestionGenerationComplete);
-            console.log('total questions length:', this.questions?.length);
-            
             // 如果題庫還沒生成完成，等待一下再重試
             if (!this.isQuestionGenerationComplete) {
-                console.log('⏳ 題庫尚未完成，等待後重試...');
                 setTimeout(() => {
                     this.updateQuestionView();
                 }, 100);
@@ -1620,12 +1559,10 @@ class DEMATELSurvey {
             }
             
             // 如果題庫已完成但還是沒有題目，顯示錯誤
-            console.error('🚨 題庫已完成但無法獲取題目，可能存在嚴重錯誤');
+            console.error('❌ 題庫已完成但無法獲取題目');
             alert('載入題目時發生錯誤，請重新整理頁面');
             return;
         }
-        
-        console.log('✅ 當前題目:', question.itemA.name, 'vs', question.itemB.name);
         
         // 更新題目類型
         const questionTypeText = question.type === 'criteria' ? '準則比較' : '構面比較';
@@ -1694,8 +1631,6 @@ class DEMATELSurvey {
             const directionButtons = document.querySelectorAll('.direction-btn');
             directionButtons.forEach(btn => btn.blur());
         }, 100);
-        
-        console.log('✅ updateQuestionView 完成');
     }
 
     /**
@@ -1740,8 +1675,6 @@ class DEMATELSurvey {
                 btn.dispatchEvent(touchCancelEvent);
             });
         }
-        
-        console.log('✅ 所有按鈕狀態已重置');
     }
 
     /**
@@ -1814,10 +1747,6 @@ class DEMATELSurvey {
     updateProgress() {
         let progress = 0;
         
-        console.log('📊 updateProgress 開始');
-        console.log('當前階段:', this.currentPhase);
-        console.log('當前索引:', this.currentIndex);
-        
         switch (this.currentPhase) {
             case 'intro':
                 progress = 0;
@@ -1826,26 +1755,32 @@ class DEMATELSurvey {
                 progress = 5;
                 break;
             case 'dimension':
-                const dimensionQuestions = this.getDimensionQuestions();
-                console.log('📊 dimension題目總數:', dimensionQuestions.length);
-                if (dimensionQuestions.length > 0) {
-                    const dimensionProgress = (this.currentIndex / dimensionQuestions.length) * 20;
-                    progress = 10 + dimensionProgress;
-                    console.log('📊 dimension進度計算: currentIndex=', this.currentIndex, '/ total=', dimensionQuestions.length, '* 20 + 10 =', progress);
-                } else {
-                    progress = 30;
-                }
-                break;
             case 'criteria':
+                // 統一使用實際完成度百分比
                 const criteriaQuestions = this.getCriteriaQuestions();
-                console.log('📊 criteria題目總數:', criteriaQuestions.length);
-                if (criteriaQuestions.length > 0) {
-                    const criteriaProgress = (this.currentIndex / criteriaQuestions.length) * 70;
-                    progress = 30 + criteriaProgress;
-                    console.log('📊 criteria進度計算: currentIndex=', this.currentIndex, '/ total=', criteriaQuestions.length, '* 70 + 30 =', progress);
-                } else {
-                    progress = 100;
-                }
+                const dimensionQuestions = this.getDimensionQuestions();
+                
+                // 計算已完成的題目數
+                let criteriaCompleted = 0;
+                let dimensionCompleted = 0;
+                
+                criteriaQuestions.forEach(q => {
+                    if (this.answers[q.key] && this.answers[q.key].relation !== 'skipped') {
+                        criteriaCompleted++;
+                    }
+                });
+                
+                dimensionQuestions.forEach(q => {
+                    if (this.answers[q.key] && this.answers[q.key].relation !== 'skipped') {
+                        dimensionCompleted++;
+                    }
+                });
+                
+                // 計算總完成度（5% 基本資料 + 95% 問卷完成度）
+                const totalQuestions = criteriaQuestions.length + dimensionQuestions.length;
+                const totalCompleted = criteriaCompleted + dimensionCompleted;
+                const completionPercentage = totalQuestions > 0 ? (totalCompleted / totalQuestions) * 95 : 0;
+                progress = 5 + completionPercentage; // 5% 基本資料 + 實際完成度
                 break;
             case 'finish':
                 progress = 100;
@@ -1917,8 +1852,6 @@ class DEMATELSurvey {
      * 顯示視圖
      */
     showView(viewName) {
-        console.log('🔄 showView 被調用，目標視圖:', viewName);
-        
         // 禁用交互防止連點
         this.disableInteractions();
         
@@ -1936,22 +1869,18 @@ class DEMATELSurvey {
         
         // 顯示指定視圖
         const targetView = document.getElementById(`view${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`);
-        console.log('🎯 目標視圖元素:', targetView ? '找到' : '未找到', `#view${viewName.charAt(0).toUpperCase() + viewName.slice(1)}`);
         
         if (targetView) {
             targetView.style.display = 'block';
-            console.log('📱 設定 display: block');
             
             setTimeout(() => {
                 targetView.classList.add('active');
-                console.log('✨ 添加 active 類別');
                 
                 // 如果是問卷頁面，同時激活問卷內容
                 if (viewName === 'question') {
                     const questionContent = document.querySelector('.question-card__content');
                     if (questionContent) {
                         questionContent.classList.add('active');
-                        console.log('📝 激活問卷內容');
                     }
                 }
                 
@@ -1960,14 +1889,12 @@ class DEMATELSurvey {
                     const surveyIdDisplay = document.getElementById('surveyIdDisplay');
                     if (surveyIdDisplay) {
                         surveyIdDisplay.textContent = this.surveyId;
-                        console.log('🆔 顯示問卷編號:', this.surveyId);
                     }
                 }
                 
                 // 動畫完成後重新啟用交互
                 setTimeout(() => {
                     this.enableInteractions();
-                    console.log('🔓 重新啟用交互');
                 }, 400);
             }, 50);
         } else {
@@ -1984,6 +1911,52 @@ class DEMATELSurvey {
     }
 
     /**
+     * 轉換答案格式為簡化版本 (僅用於下載)
+     */
+    convertAnswersForDownload(answers) {
+        const converted = {};
+        
+        for (const [key, value] of Object.entries(answers)) {
+            // 移除 dimension: 或 criteria: 前綴
+            let cleanKey = key;
+            if (key.startsWith('dimension:')) {
+                cleanKey = key.replace('dimension:', '');
+            } else if (key.startsWith('criteria:')) {
+                cleanKey = key.replace('criteria:', '');
+            }
+            
+            // 處理分數：null 轉為 0
+            const score1 = value.score1 !== null ? value.score1 : 0;
+            const score2 = value.score2 !== null ? value.score2 : 0;
+            
+            // 用 | 分隔分數
+            converted[cleanKey] = `${score1}|${score2}`;
+        }
+        
+        return converted;
+    }
+
+    /**
+     * 統一的原始資料準備函數 - 同時用於下載JSON和QR Code生成
+     */
+    prepareOriginalData() {
+        // 轉換答案格式
+        const convertedAnswers = this.convertAnswersForDownload(this.answers);
+        
+        // 統一的原始資料結構
+        const originalData = {
+            surveyId: this.surveyId,
+            basicInfo: this.basicInfo,
+            answers: convertedAnswers,
+            configMd5: this.currentMd5,
+            startTime: this.startTime,
+            endTime: this.endTime
+        };
+        
+        return originalData;
+    }
+
+    /**
      * 下載結果
      */
     async downloadResults() {
@@ -1993,12 +1966,12 @@ class DEMATELSurvey {
             return;
         }
 
+        // 使用統一的原始資料準備函數
+        const originalData = this.prepareOriginalData();
+
         const results = {
-            surveyId: this.surveyId,
-            basicInfo: this.basicInfo,
-            answers: this.answers,
-            configMd5: this.currentMd5,
-            timestamp: new Date().toISOString()
+            ...originalData,
+            totalQuestions: Object.keys(this.answers).length
         };
         
         const blob = new Blob([JSON.stringify(results, null, 2)], {
@@ -2019,8 +1992,6 @@ class DEMATELSurvey {
      * 產生 QR Code（使用進階壓縮和分段）
      */
     async generateQRCode() {
-        console.log('🔄 開始產生 QR Code...');
-        
         // 先驗證配置文件MD5
         try {
             const isValid = await this.validateConfigBeforeAction();
@@ -2034,60 +2005,60 @@ class DEMATELSurvey {
         }
 
         try {
-            // 1. 使用高度優化的數據結構
-            console.log('📦 開始優化資料結構...');
-            const optimizedData = this.createOptimizedData();
-            console.log('� 優化後大小:', JSON.stringify(optimizedData).length, '字元');
+            // 1. 使用統一的原始資料準備函數
+            const originalData = this.prepareOriginalData();
+            
+            // 添加 totalQuestions 以保持與下載格式一致
+            const dataWithTotal = {
+                ...originalData,
+                totalQuestions: Object.keys(this.answers).length
+            };
+            
+            // 去空白處理
+            const compactString = JSON.stringify(dataWithTotal);
 
-            // 2. 計算數據完整性雜湊
-            console.log('🔐 開始計算雜湊...');
-            const dataString = JSON.stringify(optimizedData);
-            const hash = await this.calculateSHA256(dataString);
-            console.log('🔐 資料雜湊:', hash.substring(0, 16) + '...');
+            // 2. 自動縮短 - Key 用 a,b,c... Value 用 #0,#1...
+            const { vObj, keyMap, valMap } = this.autoShorten(dataWithTotal);
 
-            // 3. 最終封裝
+            // 3. 雜湊 - 取 SHA-256 前 8 byte（16 hex）
+            const dataForHash = JSON.stringify(vObj);
+            const fullHash = await this.calculateSHA256(dataForHash);
+            const hash = fullHash.substring(0, 16); // 前 8 byte = 16 hex
+
+            // 4. 封裝格式 - 固定格式：{data: {vObj, keyMap, valMap}, hash, v}
             const finalData = {
-                data: optimizedData,
-                hash: hash.substring(0, 16), // 只使用前16位節省空間
-                v: "1.0" // 版本號
+                data: {
+                    vObj: vObj,
+                    keyMap: keyMap,
+                    valMap: valMap
+                },
+                hash: hash,
+                v: "1.0"
             };
 
             const finalString = JSON.stringify(finalData);
-            console.log('📦 最終封裝大小:', finalString.length, '字元');
 
             // 檢查 pako 庫
             if (typeof pako === 'undefined') {
                 throw new Error('Pako 壓縮庫未載入');
             }
 
-            // 使用最高級別壓縮
-            console.log('🗜️ 開始壓縮...');
-            const compressed = pako.deflate(finalString, { 
-                level: 9,
-                windowBits: 15,
-                memLevel: 8,
-                strategy: pako.constants.Z_DEFAULT_STRATEGY
-            });
+            // 5. 壓縮 - pako.deflate(level:9) → base64
+            const compressed = pako.deflate(finalString, { level: 9 });
             const base64 = btoa(String.fromCharCode.apply(null, compressed));
             
-            console.log('🗜️ 壓縮後大小:', base64.length, '字元');
-            console.log('📊 總壓縮率:', Math.round((1 - base64.length / JSON.stringify({
-                surveyId: this.surveyId,
-                basicInfo: this.basicInfo,
-                answers: this.answers,
-                configMd5: this.currentMd5,
-                timestamp: new Date().toISOString()
-            }).length) * 100) + '%');
+            // 計算壓縮率
+            const originalSize = JSON.stringify(dataWithTotal).length;
+            const compressionRatio = Math.round((1 - base64.length / originalSize) * 100);
 
-            // 5. 分段切片 (優化 QR Code 容量限制)
-            console.log('🔪 開始分段...');
-            const maxSegmentSize = 300; // QR Code 安全容量限制
+            // 6. 分段 - 每段固定 800 個 base64 字元
+            const maxSegmentSize = 800; // 按規格：800 字元
             const segments = this.splitIntoSegments(base64, maxSegmentSize);
-            console.log('🔪 分割成', segments.length, '個片段 (每片最大', maxSegmentSize, '字元)');
 
-            // 6. 把每片做成 QR
-            console.log('🎯 開始生成 QR Code...');
+            // 7. 產生 QR - 錯誤修正等級 L，尺寸 240px
             await this.renderQRCodes(segments);
+
+            console.log(`✅ QR Code 生成完成 - ${segments.length} 個片段，壓縮率 ${compressionRatio}%`);
             
         } catch (error) {
             console.error('❌ QR Code 生成失敗:', error);
@@ -2173,42 +2144,6 @@ class DEMATELSurvey {
     /**
      * 穩定的 JSON 字串化（固定順序）
      */
-    stableStringify(obj) {
-        return JSON.stringify(obj, Object.keys(obj).sort(), 0);
-    }
-
-    /**
-     * 創建高度優化的數據結構（使用自動縮短演算法）
-     */
-    createOptimizedData() {
-        // 1. 準備完整的原始數據
-        const fullData = {
-            surveyId: this.surveyId,
-            basicInfo: this.basicInfo,
-            answers: this.answers,
-            configMd5: this.currentMd5,
-            timestamp: new Date().toISOString()
-        };
-
-        console.log('📊 原始數據統計:');
-        console.log('- surveyId:', this.surveyId);
-        console.log('- basicInfo 欄位數:', Object.keys(this.basicInfo).length);
-        console.log('- answers 項目數:', Object.keys(this.answers).length);
-        console.log('- 原始 JSON 大小:', this.stableStringify(fullData).length, '字元');
-
-        // 2. 執行自動縮短
-        const { vObj, keyMap, valMap } = this.autoShorten(fullData);
-        
-        console.log('🔤 自動縮短結果:');
-        console.log('- 縮短的鍵數量:', Object.keys(keyMap).length);
-        console.log('- 縮短的值數量:', Object.keys(valMap).length);
-        console.log('- 壓縮後 JSON 大小:', this.stableStringify(vObj).length, '字元');
-
-        return { vObj, keyMap, valMap };
-    }
-
-
-
     /**
      * 計算 SHA-256 雜湊
      */
@@ -2221,22 +2156,63 @@ class DEMATELSurvey {
     }
 
     /**
-     * 分割成片段
+     * 分割成片段（智慧平均分配）
      */
-    splitIntoSegments(data, maxLength = 300) {
-        const segments = [];
-        const totalParts = Math.ceil(data.length / maxLength);
+    splitIntoSegments(data, maxLength = 800) {
+        // 預估每個片段的開銷（UUID + 索引 + 總數等）
+        const estimatedOverhead = 100; // 預估JSON開銷
+        const effectiveMaxLength = maxLength - estimatedOverhead;
         
-        for (let i = 0; i < totalParts; i++) {
-            const start = i * maxLength;
-            const end = Math.min(start + maxLength, data.length);
-            const part = data.substring(start, end);
+        // 計算需要的片段數
+        const totalSegments = Math.ceil(data.length / effectiveMaxLength);
+        
+        // 計算每個片段的理想長度（均勻分配）
+        const idealLength = Math.floor(data.length / totalSegments);
+        
+        console.log(`📏 資料總長度: ${data.length}, 分成 ${totalSegments} 片段, 每片理想長度: ${idealLength}`);
+        
+        const segments = [];
+        let currentPosition = 0;
+        
+        for (let i = 0; i < totalSegments; i++) {
+            let segmentLength;
             
-            segments.push({
-                i: i,           // 序號
-                total: totalParts,  // 總片數
-                part: part      // 資料片段
-            });
+            if (i === totalSegments - 1) {
+                // 最後一個片段：包含所有剩餘資料
+                segmentLength = data.length - currentPosition;
+            } else {
+                // 其他片段：平均分配，但考慮剩餘資料量
+                const remainingData = data.length - currentPosition;
+                const remainingSegments = totalSegments - i;
+                segmentLength = Math.floor(remainingData / remainingSegments);
+                
+                // 確保不會超過有效長度限制
+                if (segmentLength > effectiveMaxLength) {
+                    segmentLength = effectiveMaxLength;
+                }
+            }
+            
+            const part = data.substring(currentPosition, currentPosition + segmentLength);
+            
+            const segment = {
+                g: this.surveyId,
+                i: i + 1,  // 1-based 索引
+                total: totalSegments,
+                part: part
+            };
+            
+            // 檢查序列化後的實際長度
+            const segmentString = JSON.stringify(segment);
+            console.log(`📦 片段 ${i + 1}/${totalSegments}: 原始=${segmentLength}, 序列化=${segmentString.length}`);
+            
+            segments.push(segment);
+            currentPosition += segmentLength;
+        }
+        
+        // 驗證所有資料都被包含
+        const totalProcessed = segments.reduce((sum, seg) => sum + seg.part.length, 0);
+        if (totalProcessed !== data.length) {
+            console.warn(`⚠️ 資料長度不匹配: 原始=${data.length}, 處理後=${totalProcessed}`);
         }
         
         return segments;
@@ -2260,8 +2236,6 @@ class DEMATELSurvey {
             throw new Error('QRCode 庫未載入');
         }
         
-        console.log('🎯 開始渲染', segments.length, '個 QR Code (垂直排列模式)...');
-        
         // 清空容器
         qrCodes.innerHTML = '';
         
@@ -2278,6 +2252,9 @@ class DEMATELSurvey {
                 qrWrapper.style.textAlign = 'center';
                 qrWrapper.classList.add('qr-canvas');
                 
+                // 將整個片段物件轉成字串
+                const segmentString = JSON.stringify(segments[i]);
+                
                 // 添加 QR Code 標題
                 const titleDiv = document.createElement('div');
                 titleDiv.style.textAlign = 'center';
@@ -2285,18 +2262,13 @@ class DEMATELSurvey {
                 titleDiv.style.marginBottom = '15px';
                 titleDiv.style.fontSize = '16px';
                 titleDiv.style.color = '#333';
-                titleDiv.textContent = `QR Code(${i + 1}/${segments.length})`;
+                titleDiv.textContent = `QR Code (${i + 1}/${segments.length})`;
                 qrWrapper.appendChild(titleDiv);
                 
                 // 創建 QR Code 容器
                 const qrDiv = document.createElement('div');
                 qrDiv.style.textAlign = 'center';
                 qrWrapper.appendChild(qrDiv);
-                
-                // 將整個片段物件轉成字串
-                const segmentString = JSON.stringify(segments[i]);
-                console.log(`🔍 片段 ${i + 1} 內容:`, segmentString.substring(0, 100) + '...');
-                console.log(`🔍 片段 ${i + 1} 大小:`, segmentString.length, '字元');
                 
                 // 使用 QRCode 庫的正確 API
                 new QRCode(qrDiv, {
@@ -2305,7 +2277,7 @@ class DEMATELSurvey {
                     height: 240,
                     colorDark: "#000000",
                     colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.M
+                    correctLevel: QRCode.CorrectLevel.L
                 });
                 
                 // 添加問卷編號 UUID
@@ -2319,7 +2291,6 @@ class DEMATELSurvey {
                 qrWrapper.appendChild(uuidDiv);
                 
                 qrCodes.appendChild(qrWrapper);
-                console.log(`✅ 片段 ${i + 1} QR Code 生成成功`);
             } catch (error) {
                 console.error(`❌ 片段 ${i + 1} QR Code 生成失敗:`, error);
                 throw new Error(`片段 ${i + 1} QR Code 生成失敗: ${error.message}`);
@@ -2328,35 +2299,6 @@ class DEMATELSurvey {
         
         // 顯示容器
         qrContainer.style.display = 'block';
-        console.log('🎉 QR Code 渲染完成 - 所有QR Code已垂直排列');
-    }
-
-    /**
-     * 切換 Debug 面板
-     */
-    toggleDebugPanel() {
-        const content = document.getElementById('debugContent');
-        const debugData = document.getElementById('debugData');
-        
-        if (content.style.display === 'none') {
-            // 更新 Debug 資料
-            const data = {
-                phase: this.currentPhase,
-                index: this.currentIndex,
-                dataHash: this.dataHash,
-                questionsCount: this.questions.length,
-                answersCount: Object.keys(this.answers).length,
-                basicInfo: this.basicInfo,
-                answers: this.answers
-            };
-            
-            debugData.textContent = JSON.stringify(data, null, 2);
-            content.style.display = 'block';
-            content.classList.add('show');
-        } else {
-            content.style.display = 'none';
-            content.classList.remove('show');
-        }
     }
 
     /**
@@ -2433,6 +2375,8 @@ class DEMATELSurvey {
             localStorage.setItem('dematel_index', this.currentIndex.toString());
             localStorage.setItem('dematel_answers', JSON.stringify(this.answers));
             localStorage.setItem('dematel_survey_id', this.surveyId);
+            localStorage.setItem('dematel_start_time', this.startTime ? this.startTime.toString() : '');
+            localStorage.setItem('dematel_end_time', this.endTime ? this.endTime.toString() : '');
             
             // 記錄上次保存的狀態
             this.lastSavedIndex = this.currentIndex;
@@ -2450,6 +2394,8 @@ class DEMATELSurvey {
                     localStorage.setItem('dematel_index', this.currentIndex.toString());
                     localStorage.setItem('dematel_answers', JSON.stringify(this.answers));
                     localStorage.setItem('dematel_survey_id', this.surveyId);
+                    localStorage.setItem('dematel_start_time', this.startTime ? this.startTime.toString() : '');
+                    localStorage.setItem('dematel_end_time', this.endTime ? this.endTime.toString() : '');
                     this.lastSavedIndex = this.currentIndex;
                     this.lastSavedPhase = this.currentPhase;
                     console.log('💾 清理後重新保存成功');
@@ -2475,7 +2421,9 @@ class DEMATELSurvey {
             'dematel_answers',
             'dematel_data_hash',
             'dematel_shuffle_seed',
-            'dematel_survey_id'
+            'dematel_survey_id',
+            'dematel_start_time',
+            'dematel_end_time'
         ];
         
         // 如果不保留 MD5，則一併清除

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-    <title>DEMATEL 問卷系統</title>
+    <title>DEMATEL 問卷</title>
     <link rel="stylesheet" href="lib/fonts/noto-sans-tc.css">
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <!-- App Shell -->
     <header class="app-shell">
-        <div class="app-shell__title">DEMATEL 問卷系統</div>
+        <div class="app-shell__title">DEMATEL 問卷</div>
         <div class="app-shell__progress">
             <div class="progress-bar" id="progressBar" style="--percent: 0"></div>
             <div class="progress-text" id="progressText">構面 0/0 題 | 準則 0/0 題 | 完成度 0%</div>
@@ -51,7 +51,7 @@
         <section class="view view--question" id="viewQuestion" style="display: none;">
             <div class="question-card">
                 <div class="question-card__header">
-                    <div class="question-card__type" id="questionType">準則比較</div>
+                    <div class="question-card__type" id="questionType">XXX 比較</div>
                 </div>
                 
                 <div class="question-card__content">
@@ -226,20 +226,6 @@
             
             <div class="modal__footer">
                 <button class="btn btn--primary" id="restartFromConfigChangeBtn" tabindex="-1">重新開始</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Debug Panel -->
-    <div class="debug-panel" id="debugPanel">
-        <button class="debug-panel__toggle" id="debugToggle" tabindex="-1">🐞</button>
-        <div class="debug-panel__content" id="debugContent" style="display: none;">
-            <div class="debug-panel__header">
-                <h3>Debug 資訊</h3>
-                <button class="btn btn--small btn--danger" id="clearDataBtn" tabindex="-1">清空資料</button>
-            </div>
-            <div class="debug-panel__body">
-                <pre id="debugData">載入中...</pre>
             </div>
         </div>
     </div>
