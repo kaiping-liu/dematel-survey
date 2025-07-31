@@ -2807,26 +2807,6 @@ class DEMATELSurvey {
     }
 }
 
-// 檢查必要庫是否已載入
-async function waitForLibraries() {
-    console.log('🔍 檢查必要函式庫載入狀態...');
-    
-    // 驗證庫是否正確載入
-    const libraries = [
-        { name: 'QRCode', description: 'QR Code 生成庫' },
-        { name: 'pako', description: '資料壓縮庫' }
-    ];
-    
-    for (const lib of libraries) {
-        if (typeof window[lib.name] === 'undefined') {
-            throw new Error(`${lib.description} 載入失敗，請檢查 lib/${lib.name.toLowerCase()}.min.js 文件是否存在`);
-        }
-        console.log(`✅ ${lib.description} 驗證完成`);
-    }
-    
-    console.log('✅ 所有必要函式庫載入並驗證完成');
-}
-
 // 初始化應用程式
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -2841,58 +2821,127 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.addEventListener('resize', setVH);
         window.addEventListener('orientationchange', setVH);
         
-        // 先等待所有必要的庫載入完成
-        await waitForLibraries();
+        // 等待少許時間讓 Loading 畫面完全渲染
+        await new Promise(resolve => setTimeout(resolve, 100));
         
-        // 然後初始化應用
-        new DEMATELSurvey();
+        // 載入所有必要的外部資源（CDN 優先，本地容錯）
+        console.log('🚀 開始載入外部資源...');
+        const resourcesLoaded = await loadAllResources();
+        
+        if (!resourcesLoaded) {
+            throw new Error('外部資源載入失敗，無法繼續執行');
+        }
+        
+        console.log('✅ 所有外部資源載入完成，開始初始化應用...');
+        
+        // 等待 Loading 畫面完全隱藏後再初始化應用
+        setTimeout(() => {
+            new DEMATELSurvey();
+        }, 600);
         
     } catch (error) {
         console.error('❌ 應用程式啟動失敗:', error);
         
-        // 顯示錯誤訊息
-        const body = document.body;
-        if (body) {
-            body.innerHTML = `
-                <div style="
-                    display: flex;
-                    flex-direction: column;
-                    justify-content: center;
-                    align-items: center;
-                    min-height: 100vh;
-                    padding: 2rem;
-                    text-align: center;
-                    font-family: Arial, sans-serif;
-                    background: #f8f9fa;
-                ">
-                    <div style="
-                        background: white;
-                        padding: 2rem;
-                        border-radius: 8px;
-                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                        max-width: 500px;
-                    ">
-                        <h2 style="color: #dc3545; margin-bottom: 1rem;">載入失敗</h2>
-                        <p style="color: #6c757d; margin-bottom: 1.5rem;">${error.message}</p>
-                        <button 
-                            onclick="window.location.reload()" 
-                            style="
-                                background: #007bff;
-                                color: white;
-                                border: none;
-                                padding: 0.75rem 1.5rem;
-                                border-radius: 4px;
-                                cursor: pointer;
-                                font-size: 1rem;
-                            "
-                        >
-                            重新載入
-                        </button>
-                    </div>
-                </div>
-            `;
+        // 隱藏 Loading 畫面並顯示錯誤
+        if (window.loadingManager) {
+            window.loadingManager.showError('系統啟動失敗');
+            
+            // 延遲顯示錯誤頁面
+            setTimeout(() => {
+                window.loadingManager.hide(0);
+                showErrorPage(error);
+            }, 2000);
         } else {
-            alert(`載入失敗: ${error.message}\n\n請重新整理頁面。`);
+            showErrorPage(error);
         }
     }
 });
+
+/**
+ * 顯示錯誤頁面
+ * @param {Error} error - 錯誤物件
+ */
+function showErrorPage(error) {
+    const body = document.body;
+    if (body) {
+        body.innerHTML = `
+            <div style="
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                padding: 2rem;
+                text-align: center;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+                background: linear-gradient(135deg, #fefae0 0%, #f7f1d1 100%);
+            ">
+                <div style="
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+                    max-width: 500px;
+                    border: 1px solid rgba(212, 163, 115, 0.2);
+                ">
+                    <div style="
+                        width: 64px;
+                        height: 64px;
+                        margin: 0 auto 1.5rem;
+                        background: #fee2e2;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 2rem;
+                    ">⚠️</div>
+                    <h2 style="color: #dc2626; margin-bottom: 1rem; font-size: 1.5rem;">系統載入失敗</h2>
+                    <p style="color: #6b7280; margin-bottom: 1.5rem; line-height: 1.6;">
+                        ${error.message || '未知錯誤，請檢查網路連線並重試'}
+                    </p>
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <button 
+                            onclick="window.location.reload()" 
+                            style="
+                                background: #d4a373;
+                                color: white;
+                                border: none;
+                                padding: 0.75rem 1.5rem;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                transition: background-color 0.2s;
+                            "
+                            onmouseover="this.style.background='#c4956b'"
+                            onmouseout="this.style.background='#d4a373'"
+                        >
+                            🔄 重新載入
+                        </button>
+                        <button 
+                            onclick="console.log('Debug info:', {error: '${error.message}', stack: '${error.stack?.replace(/'/g, "\\'") || 'N/A'}'})" 
+                            style="
+                                background: #6b7280;
+                                color: white;
+                                border: none;
+                                padding: 0.75rem 1.5rem;
+                                border-radius: 8px;
+                                cursor: pointer;
+                                font-size: 1rem;
+                                transition: background-color 0.2s;
+                            "
+                            onmouseover="this.style.background='#4b5563'"
+                            onmouseout="this.style.background='#6b7280'"
+                        >
+                            🔍 查看詳情
+                        </button>
+                    </div>
+                    <p style="color: #9ca3af; font-size: 0.875rem; margin-top: 1.5rem;">
+                        如果問題持續發生，請檢查瀏覽器控制台獲取更多資訊
+                    </p>
+                </div>
+            </div>
+        `;
+    } else {
+        alert(`載入失敗: ${error.message}\n\n請重新整理頁面。`);
+    }
+}

@@ -4,10 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>DEMATEL 問卷</title>
-    <link rel="stylesheet" href="lib/fonts/noto-sans-tc.css">
+    <!-- 字體將通過資源載入器動態載入 -->
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+    <!-- 資源載入畫面 -->
+    <div id="resourceLoader" class="resource-loader">
+        <div class="resource-loader__content">
+            <div class="resource-loader__logo">
+                <div class="resource-loader__spinner"></div>
+            </div>
+            <h2 class="resource-loader__title">DEMATEL 問卷系統</h2>
+            <div class="resource-loader__progress">
+                <div class="resource-loader__status" id="loadingStatus">正在初始化系統...</div>
+                <div class="resource-loader__bar">
+                    <div class="resource-loader__fill" id="loadingProgress"></div>
+                </div>
+                <div class="resource-loader__details" id="loadingDetails">正在檢查網路連線...</div>
+            </div>
+        </div>
+    </div>
     <!-- App Shell -->
     <header class="app-shell">
         <div class="app-shell__title">DEMATEL 問卷</div>
@@ -304,11 +320,10 @@
     })();
     </script>
     
-    <!-- External Libraries -->
-    <script src="lib/qrcode.min.js"></script>
-    <script src="lib/pako.min.js"></script>
+    <!-- 資源載入器 - 必須最先載入 -->
+    <script src="js/resource-loader.js"></script>
     
-    <!-- Main Application -->
+    <!-- 主應用程式 -->
     <script src="js/app.js"></script>
 </body>
 </html>
