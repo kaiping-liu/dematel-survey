@@ -57,18 +57,20 @@
                 <div class="question-card__content">
                     <div class="question-pair">
                         <div class="question-comparison">
-                            <div class="question-pair__item question-pair__item--left">
+                            <div class="question-pair__item question-pair__item--left question-pair__item--clickable" id="leftItem" tabindex="-1">
                                 <div class="item-dimension" id="leftItemDimension" style="display: none;"></div>
-                                <h3 class="item__title" id="leftItemTitle">項目 A</h3>
+                                <h3 class="item__title" id="leftItemTitle" tabindex="-1">項目 A</h3>
                                 <p class="item__description" id="leftItemDescription">項目說明</p>
+                                <div class="item__click-hint">📋</div>
                             </div>
                             
                             <div class="vs-divider">vs.</div>
                             
-                            <div class="question-pair__item question-pair__item--right">
+                            <div class="question-pair__item question-pair__item--right question-pair__item--clickable" id="rightItem" tabindex="-1">
                                 <div class="item-dimension" id="rightItemDimension" style="display: none;"></div>
-                                <h3 class="item__title" id="rightItemTitle">項目 B</h3>
+                                <h3 class="item__title" id="rightItemTitle" tabindex="-1">項目 B</h3>
                                 <p class="item__description" id="rightItemDescription">項目說明</p>
+                                <div class="item__click-hint">📋</div>
                             </div>
                         </div>
                         
@@ -143,6 +145,26 @@
             </div>
         </section>
     </main>
+
+    <!-- 構面/準則詳情模態窗口 -->
+    <div class="modal-overlay" id="detailModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">詳細說明</h3>
+                <button class="modal-close" id="modalCloseBtn" tabindex="-1">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-description" id="modalDescription"></div>
+                <div class="modal-examples" id="modalExamples">
+                    <h4>舉例說明：</h4>
+                    <ul class="examples-list" id="examplesList"></ul>
+                </div>
+                <div class="modal-no-content" id="modalNoContent" style="display: none;">
+                    <p>暫無詳細內容</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Score Modal -->
     <div class="modal" id="scoreModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">

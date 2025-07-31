@@ -462,16 +462,32 @@ class DEMATELSurvey {
                     itemA: {
                         id: dimensionA.代碼,
                         name: dimensionA.構面,
-                        description: dimensionA.說明
+                        description: dimensionA.說明,
+                        examples: this.getDimensionExamples(dimensionA)
                     },
                     itemB: {
                         id: dimensionB.代碼,
                         name: dimensionB.構面,
-                        description: dimensionB.說明
+                        description: dimensionB.說明,
+                        examples: this.getDimensionExamples(dimensionB)
                     }
                 };
             }
         }
+    }
+
+    /**
+     * 獲取構面的舉例信息
+     * @param {Object} dimension - 構面對象
+     * @returns {Array} - 舉例數組
+     */
+    getDimensionExamples(dimension) {
+        // 構面本身通常沒有舉例，只返回構面級別的舉例（如果有的話）
+        // 不從準則中收集舉例，因為那是準則的內容
+        if (dimension.舉例 && Array.isArray(dimension.舉例)) {
+            return dimension.舉例;
+        }
+        return []; // 構面沒有舉例時返回空數組
     }
 
     /**
@@ -558,6 +574,19 @@ class DEMATELSurvey {
     }
 
     /**
+     * 檢查字串是否為圖片路徑
+     * @param {string} str - 要檢查的字串
+     * @returns {boolean} - 是否為圖片路徑
+     */
+    isImagePath(str) {
+        if (typeof str !== 'string') return false;
+        
+        // 檢查是否包含常見圖片副檔名
+        const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i;
+        return imageExtensions.test(str.trim());
+    }
+
+    /**
      * 設置 Intro 頁面
      */
     setupIntroView() {
@@ -574,12 +603,20 @@ class DEMATELSurvey {
                 contentEl.innerHTML = content.map(line => {
                     if (line.trim() === '') {
                         return '<br>';
+                    } else if (this.isImagePath(line)) {
+                        // 如果是圖片路徑，創建 img 標籤
+                        return `<div class="intro-image-container"><img src="${line}" alt="說明圖片" class="intro-image" /></div>`;
                     } else {
                         return `<p>${line}</p>`;
                     }
                 }).join('');
             } else {
-                contentEl.innerHTML = `<p>${content}</p>`;
+                if (this.isImagePath(content)) {
+                    // 如果是圖片路徑，創建 img 標籤
+                    contentEl.innerHTML = `<div class="intro-image-container"><img src="${content}" alt="說明圖片" class="intro-image" /></div>`;
+                } else {
+                    contentEl.innerHTML = `<p>${content}</p>`;
+                }
             }
             
             startBtn.textContent = this.config.說明.按鈕文字;
@@ -800,44 +837,59 @@ class DEMATELSurvey {
         const target = e.target;
         const button = target.closest('button');
         
-        if (!button) return;
+        // 處理按鈕點擊
+        if (button) {
+            // 立即移除所有按鈕的焦點，防止手機上的黑色邊框
+            setTimeout(() => {
+                button.blur();
+                document.activeElement.blur();
+            }, 0);
+
+            const id = button.id;
+            const classList = button.classList;
+            
+            // 根據按鈕類型和ID分發事件
+            if (id === 'startBtn') {
+                this.startSurvey();
+            } else if (id === 'resumeBtn') {
+                this.resumeSurvey();
+            } else if (id === 'restartBtn') {
+                this.restartSurvey();
+            } else if (id === 'prevQuestionBtn') {
+                this.previousQuestion();
+            } else if (id === 'closeModalBtn') {
+                this.hideModal();
+            } else if (id === 'downloadBtn') {
+                this.downloadResults();
+            } else if (id === 'generateQRBtn') {
+                this.generateQRCode();
+            } else if (id === 'restartSurveyBtn') {
+                this.restartSurvey();
+            } else if (id === 'clearDataBtn') {
+                this.clearAllData();
+            } else if (classList.contains('score-btn')) {
+                this.handleScoreButtonClick(button);
+            } else if (classList.contains('direction-btn')) {
+                this.selectDirection(button.dataset.direction);
+                // 立即移除焦點，避免手機瀏覽器殘留黑框
+                setTimeout(() => button.blur(), 0);
+            } else if (classList.contains('modal__backdrop')) {
+                this.hideModal();
+            } else if (id === 'modalCloseBtn') {
+                this.hideDetailModal();
+            }
+        }
         
-        // 立即移除所有按鈕的焦點，防止手機上的黑色邊框
-        setTimeout(() => {
-            button.blur();
-            document.activeElement.blur();
-        }, 0);
+        // 處理構面/準則卡片點擊事件（非按鈕點擊）
+        if (target.closest('.question-pair__item--clickable')) {
+            const clickedItem = target.closest('.question-pair__item--clickable');
+            const isLeft = clickedItem.id === 'leftItem';
+            this.showDetailModal(isLeft);
+        }
         
-        const id = button.id;
-        const classList = button.classList;
-        
-        // 根據按鈕類型和ID分發事件
-        if (id === 'startBtn') {
-            this.startSurvey();
-        } else if (id === 'resumeBtn') {
-            this.resumeSurvey();
-        } else if (id === 'restartBtn') {
-            this.restartSurvey();
-        } else if (id === 'prevQuestionBtn') {
-            this.previousQuestion();
-        } else if (id === 'closeModalBtn') {
-            this.hideModal();
-        } else if (id === 'downloadBtn') {
-            this.downloadResults();
-        } else if (id === 'generateQRBtn') {
-            this.generateQRCode();
-        } else if (id === 'restartSurveyBtn') {
-            this.restartSurvey();
-        } else if (id === 'clearDataBtn') {
-            this.clearAllData();
-        } else if (classList.contains('score-btn')) {
-            this.handleScoreButtonClick(button);
-        } else if (classList.contains('direction-btn')) {
-            this.selectDirection(button.dataset.direction);
-            // 立即移除焦點，避免手機瀏覽器殘留黑框
-            setTimeout(() => button.blur(), 0);
-        } else if (classList.contains('modal__backdrop')) {
-            this.hideModal();
+        // 處理詳情模態窗口點擊外部區域關閉
+        if (target.classList.contains('modal-overlay') && target.id === 'detailModal') {
+            this.hideDetailModal();
         }
     }
     
@@ -1225,6 +1277,63 @@ class DEMATELSurvey {
         });
         
         this.tempRelation = null;
+    }
+
+    /**
+     * 顯示構面/準則詳情模態窗口
+     * @param {boolean} isLeft - 是否為左側項目
+     */
+    showDetailModal(isLeft) {
+        const currentQuestion = this.getCurrentQuestion();
+        if (!currentQuestion) return;
+
+        const item = isLeft ? currentQuestion.itemA : currentQuestion.itemB;
+        const modal = document.getElementById('detailModal');
+        const title = document.getElementById('modalTitle');
+        const description = document.getElementById('modalDescription');
+        const examples = document.getElementById('modalExamples');
+        const examplesList = document.getElementById('examplesList');
+        const noContent = document.getElementById('modalNoContent');
+
+        // 設置標題
+        title.textContent = item.name;
+
+        // 設置描述
+        description.textContent = item.description || '';
+
+        // 處理舉例內容
+        if (item.examples && item.examples.length > 0) {
+            examples.style.display = 'block';
+            noContent.style.display = 'none';
+            
+            examplesList.innerHTML = '';
+            item.examples.forEach(example => {
+                const li = document.createElement('li');
+                li.textContent = example;
+                examplesList.appendChild(li);
+            });
+        } else {
+            examples.style.display = 'none';
+            noContent.style.display = 'none';
+        }
+
+        // 顯示模態窗口
+        modal.style.display = 'flex';
+        requestAnimationFrame(() => {
+            modal.classList.add('show');
+        });
+    }
+
+    /**
+     * 隱藏構面/準則詳情模態窗口
+     */
+    hideDetailModal() {
+        const modal = document.getElementById('detailModal');
+        modal.classList.remove('show');
+        
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300); // 等待動畫完成
     }
 
     /**
