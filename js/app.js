@@ -1522,6 +1522,16 @@ class DEMATELSurvey {
     updateQuestionViewWithAnimation(reverse = false) {
         const questionContent = document.querySelector('.question-card__content');
         
+        // 立即將容器滾動到頂部
+        const viewContainer = document.querySelector('.view-container');
+        if (viewContainer) {
+            viewContainer.scrollTop = 0;
+        }
+        // 同時也將 body 和 window 滾動到頂部（備用方案）
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+        window.scrollTo(0, 0);
+        
         // 禁用所有交互
         this.disableInteractions();
         
@@ -2029,6 +2039,17 @@ class DEMATELSurvey {
     showView(viewName) {
         // 禁用交互防止連點
         this.disableInteractions();
+        
+        // 立即將容器滾動到頂部，避免視覺上的滾動效果
+        const viewContainer = document.querySelector('.view-container');
+        if (viewContainer) {
+            viewContainer.scrollTop = 0;
+        }
+        
+        // 同時也將 body 和 window 滾動到頂部（備用方案）
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+        window.scrollTo(0, 0);
         
         // 隱藏所有視圖
         document.querySelectorAll('.view').forEach(view => {
