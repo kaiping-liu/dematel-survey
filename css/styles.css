@@ -68,7 +68,7 @@ button:focus,
     outline-color: transparent !important;
   }
   
-  /* 移動設備上的 select 統一樣式 */
+  /* 秘技設備上的 select 統一樣式 */
   select {
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
@@ -238,6 +238,14 @@ body {
 }
 
 /* Intro View */
+.full-width-btn {
+  display: block;
+  width: 100%;
+  max-width: 400px;
+  margin: 24px auto;
+  box-sizing: border-box;
+  text-align: center;
+}
 .intro-card {
   background: var(--clr-white);
   padding: var(--spacing-2xl);
@@ -287,9 +295,16 @@ body {
 
 .intro-card__button {
   margin: 0 auto var(--spacing-lg) auto !important;
+  /* display: flex !important; */
+  /* text-align: center !important; */
+  /* width: fit-content !important; */
+}
+
+/* 通用全寬主按鈕，保證覆寫 */
+.btn--full-width {
+  width: 100% !important;
   display: flex !important;
-  text-align: center !important;
-  width: fit-content !important;
+  justify-content: center !important;
 }
 
 .intro-card__resume {
@@ -453,9 +468,25 @@ body {
 }
 
 .basic-form__actions {
-  display: flex;
-  justify-content: space-between;
+  display: block !important;
   gap: var(--spacing-md);
+}
+.basic-form__actions .btn {
+  width: 100% !important;
+}
+/* 共用全寬主按鈕樣式 */
+.btn--full-width {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+}
+
+/* 桌機/平板底部空白縮減 */
+@media (min-width:769px){
+  .view-container{
+    padding-bottom:var(--spacing-xl)!important;
+  }
+}
 }
 
 /* Question Card */
@@ -673,10 +704,6 @@ body {
     outline-width: 0 !important;
     outline-style: none !important;
     outline-color: transparent !important;
-    -webkit-tap-highlight-color: transparent !important;
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    appearance: none !important;
   }
 }
 
@@ -717,15 +744,24 @@ body {
 
 .question-card__footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   padding-top: var(--spacing-md);
   border-top: 2px solid var(--clr-main);
 }
 
 .question-navigation {
-  display: flex;
+  display: flex !important;
+  justify-content: flex-start !important;
   gap: var(--spacing-md);
+}
+
+#prevQuestionBtn {
+  order: 1 !important; /* 確保上一題按鈕在左側 */
+}
+
+#nextQuestionBtn {
+  order: 2 !important; /* 保持順序在右側，但不推到最右 */
 }
 
 /* Finish Card */
@@ -1261,8 +1297,8 @@ body {
   }
   
   .question-navigation {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    gap: var(--spacing-sm);
   }
   
   .question-pair__controls {
@@ -1362,53 +1398,6 @@ body {
     outline: 2px solid var(--clr-accent) !important;
     outline-offset: 2px !important;
     box-shadow: none !important;
-  }
-}
-
-/* 移動端底部工具列專用優化 */
-@media (max-width: 768px) {
-  /* 針對 iOS Safari 的底部工具列 */
-  @supports (-webkit-touch-callout: none) {
-    .view-container {
-      padding-bottom: calc(var(--spacing-xl) + var(--safe-area-bottom) + 80px);
-    }
-  }
-  
-  /* 針對 Android Chrome 的底部工具列 */
-  @supports not (-webkit-touch-callout: none) {
-    .view-container {
-      padding-bottom: calc(var(--spacing-xl) + var(--safe-area-bottom) + 70px);
-    }
-  }
-  
-  /* 確保按鈕區域有足夠的底部間距 */
-  .basic-form__actions,
-  .finish-card__actions,
-  .question-navigation {
-    margin-bottom: calc(var(--spacing-xl) + 20px);
-  }
-  
-  /* 移動設備上的 select 元素優化 */
-  .form-field__select {
-    /* 移動設備上的字體大小調整 */
-    font-size: 16px; /* iOS 需要 16px 以上才不會自動縮放 */
-    min-height: 44px; /* iOS 建議的最小觸控目標 */
-    
-    /* 確保背景箭頭在小螢幕上也清晰可見 */
-    background-size: 14px;
-    padding-right: calc(var(--spacing-md) + 22px);
-  }
-  
-  /* 確保在移動設備上 select 的 option 樣式一致 */
-  .form-field__select option {
-    padding: var(--spacing-sm);
-    color: var(--clr-text-primary);
-    background: var(--clr-white);
-  }
-  
-  /* QR Code 容器也需要額外空間 */
-  .qr-container {
-    margin-bottom: calc(var(--spacing-xl) + 20px);
   }
 }
 
@@ -1585,5 +1574,41 @@ body {
   
   .item__click-hint {
     opacity: 1; /* 在觸控設備上總是顯示 */
+  }
+}
+
+/* --- DEMATEL Survey: 強制左右推開按鈕 --- */
+.question-navigation {
+  width: 100%;
+  justify-content: space-between !important;
+}
+#nextQuestionBtn {
+  margin-left: auto !important;
+}
+
+/* ===== 手機版底部間距統一修正 ===== */
+@media (max-width: 768px){
+  /* 保留較大的安全區域，確保所有裝置按鈕都不被遮擋 */
+  .view-container{
+    padding-bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 60px)) !important;
+  }
+
+  /* 讓按鈕區域緊貼卡片底部，移除多餘間距 */
+  .basic-form__actions,
+  .finish-card__actions,
+  .question-navigation{
+    margin-bottom: 0 !important;
+  }
+}
+
+/* ===== 桌機/平板統一間距 ===== */
+@media (min-width: 769px){
+  .view-container{ 
+    padding-bottom: var(--spacing-xl) !important; 
+  }
+  .basic-form__actions,
+  .finish-card__actions,
+  .question-navigation{ 
+    margin-bottom: 0 !important; 
   }
 }

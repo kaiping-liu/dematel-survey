@@ -12,6 +12,7 @@ class DEMATELSurvey {
         this.basicInfo = {};
         this.currentPhase = 'intro';
         this.currentIndex = 0;
+        this.maxReachedIndex = 0; // 記錄用戶達到過的最大題目索引
         this.dataHash = '';
         this.tempRelation = null;
         this.isModalValid = false;
@@ -728,6 +729,7 @@ class DEMATELSurvey {
     checkExistingData() {
         const storedPhase = localStorage.getItem('dematel_phase');
         const storedIndex = localStorage.getItem('dematel_index');
+        const storedMaxReachedIndex = localStorage.getItem('dematel_max_reached_index');
         const storedBasicInfo = localStorage.getItem('dematel_basic_info');
         const storedAnswers = localStorage.getItem('dematel_answers');
         const storedSurveyId = localStorage.getItem('dematel_survey_id');
@@ -760,6 +762,7 @@ class DEMATELSurvey {
             // 載入已存資料，但不顯示 UI（由 Modal 系統處理）
             this.currentPhase = storedPhase;
             this.currentIndex = parseInt(storedIndex) || 0;
+            this.maxReachedIndex = parseInt(storedMaxReachedIndex) || 0;
             this.basicInfo = JSON.parse(storedBasicInfo);
             this.answers = storedAnswers ? JSON.parse(storedAnswers) : {};
         }
@@ -857,6 +860,8 @@ class DEMATELSurvey {
                 this.restartSurvey();
             } else if (id === 'prevQuestionBtn') {
                 this.previousQuestion();
+            } else if (id === 'nextQuestionBtn') {
+                this.nextQuestion();
             } else if (id === 'closeModalBtn') {
                 this.hideModal();
             } else if (id === 'downloadBtn') {
@@ -1451,12 +1456,15 @@ class DEMATELSurvey {
         
         if (this.currentIndex < currentQuestions.length - 1) {
             this.currentIndex++;
+            // 更新最大達到索引
+            this.maxReachedIndex = Math.max(this.maxReachedIndex, this.currentIndex);
         } else {
             // 當前階段完成
             if (this.currentPhase === 'dimension') {
                 // 進入準則比較階段
                 this.currentPhase = 'criteria';
                 this.currentIndex = 0;
+                this.maxReachedIndex = 0; // 重置為新階段的開始
             } else {
                 // 完成所有題目
                 this.endTime = Date.now(); // 使用 timestamp
@@ -1648,6 +1656,23 @@ class DEMATELSurvey {
             // 在構面比較的第一題時禁用上一題按鈕（因為構面是第一階段）
             prevBtn.disabled = this.currentIndex === 0 && this.currentPhase === 'dimension';
         }
+
+        // 更新下一題按鈕狀態
+        const nextBtn = document.getElementById('nextQuestionBtn');
+        if (nextBtn) {
+            // 當 currentIndex 不等於 maxReachedIndex 時啟用「下一題」按鈕
+            const shouldEnable = this.currentIndex < this.maxReachedIndex;
+            nextBtn.disabled = !shouldEnable;
+            
+            // 調試模式
+            if (typeof window !== 'undefined' && window.location.search.includes('debug')) {
+                console.log(`🔍 按鈕狀態檢查:`);
+                console.log(`  - currentIndex: ${this.currentIndex}`);
+                console.log(`  - maxReachedIndex: ${this.maxReachedIndex}`);
+                console.log(`  - shouldEnable: ${shouldEnable}`);
+                console.log(`下一題按鈕狀態: ${shouldEnable ? '啟用' : '禁用'}`);
+            }
+        }
     }
 
     /**
@@ -1728,6 +1753,18 @@ class DEMATELSurvey {
         
         // 更新按鈕狀態
         this.updateButtonStates();
+        
+        // 調試：檢查下一題按鈕狀態
+        if (typeof window !== 'undefined' && window.location.search.includes('debug')) {
+            console.log('=== 問題視圖更新調試 ===');
+            console.log('當前問題:', question.key);
+            console.log('當前階段:', this.currentPhase);
+            console.log('當前索引:', this.currentIndex);
+            const nextQ = this.getNextQuestion();
+            console.log('下一題:', nextQ ? nextQ.key : '無');
+            console.log('下一題有答案:', this.hasNextQuestionAnswer());
+            console.log('========================');
+        }
         
         // 確保問卷內容是可見的（直接載入時需要）
         const questionContent = document.querySelector('.question-card__content');
@@ -1822,6 +1859,35 @@ class DEMATELSurvey {
     getCurrentQuestion() {
         const currentQuestions = this.getCurrentQuestions();
         return currentQuestions[this.currentIndex];
+    }
+
+    /**
+     * 獲取下一題（如果存在）
+     */
+    getNextQuestion() {
+        const currentQuestions = this.getCurrentQuestions();
+        
+        if (this.currentIndex < currentQuestions.length - 1) {
+            // 同階段的下一題
+            return currentQuestions[this.currentIndex + 1];
+        } else {
+            // 檢查下一階段的第一題
+            if (this.currentPhase === 'dimension') {
+                const criteriaQuestions = this.getCriteriaQuestions();
+                return criteriaQuestions.length > 0 ? criteriaQuestions[0] : null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 檢查下一題是否已有答案
+     */
+    hasNextQuestionAnswer() {
+        const nextQuestion = this.getNextQuestion();
+        if (!nextQuestion) return false;
+        
+        return this.answers[nextQuestion.key] && this.answers[nextQuestion.key].relation !== 'skipped';
     }
 
     /**
@@ -2482,6 +2548,7 @@ class DEMATELSurvey {
         try {
             localStorage.setItem('dematel_phase', this.currentPhase);
             localStorage.setItem('dematel_index', this.currentIndex.toString());
+            localStorage.setItem('dematel_max_reached_index', this.maxReachedIndex.toString());
             localStorage.setItem('dematel_answers', JSON.stringify(this.answers));
             localStorage.setItem('dematel_survey_id', this.surveyId);
             localStorage.setItem('dematel_start_time', this.startTime ? this.startTime.toString() : '');
@@ -2526,6 +2593,7 @@ class DEMATELSurvey {
         const keys = [
             'dematel_phase',
             'dematel_index',
+            'dematel_max_reached_index',
             'dematel_basic_info',
             'dematel_answers',
             'dematel_data_hash',
@@ -2545,6 +2613,7 @@ class DEMATELSurvey {
         // 重置狀態
         this.currentPhase = 'intro';
         this.currentIndex = 0;
+        this.maxReachedIndex = 0;
         this.basicInfo = {};
         this.answers = {};
         
