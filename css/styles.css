@@ -1703,9 +1703,12 @@ body {
 }
 
 /* ===== 桌機/平板統一間距 - 覆寫所有頁面的底部安全區域 ===== */
-@media (min-width: 769px){
-  .view-container{ 
+@media (min-width: 769px) {
+  .view-container { 
     /* 桌機不需要額外的安全區域，恢復標準間距 */
     padding-bottom: var(--spacing-xl) !important; 
+    /* 確保內容區域高度適合桌面 */
+    height: calc(100vh - var(--header-height));
+    min-height: auto !important;
   }
 }

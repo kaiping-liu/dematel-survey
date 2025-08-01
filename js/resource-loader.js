@@ -393,14 +393,14 @@ window.RESOURCE_CONFIG = {
     qrcode: {
         name: 'QRCode',
         type: 'script',
-        cdnUrl: 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
+        cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
         fallbackUrl: 'lib/qrcode.min.js',
         validator: () => typeof QRCode !== 'undefined'
     },
     pako: {
         name: 'Pako',
         type: 'script',
-        cdnUrl: 'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js',
+        cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js',
         fallbackUrl: 'lib/pako.min.js',
         validator: () => typeof pako !== 'undefined'
     },

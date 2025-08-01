@@ -605,16 +605,18 @@ class DEMATELSurvey {
                     if (line.trim() === '') {
                         return '<br>';
                     } else if (this.isImagePath(line)) {
-                        // 如果是圖片路徑，創建 img 標籤
-                        return `<div class="intro-image-container"><img src="${line}" alt="說明圖片" class="intro-image" /></div>`;
+                        // 如果是圖片路徑，直接加時間戳
+                        const imageSrc = line + '?v=' + Date.now();
+                        return `<div class="intro-image-container"><img src="${imageSrc}" alt="說明圖片" class="intro-image" /></div>`;
                     } else {
                         return `<p>${line}</p>`;
                     }
                 }).join('');
             } else {
                 if (this.isImagePath(content)) {
-                    // 如果是圖片路徑，創建 img 標籤
-                    contentEl.innerHTML = `<div class="intro-image-container"><img src="${content}" alt="說明圖片" class="intro-image" /></div>`;
+                    // 如果是圖片路徑，直接加時間戳
+                    const imageSrc = content + '?v=' + Date.now();
+                    contentEl.innerHTML = `<div class="intro-image-container"><img src="${imageSrc}" alt="說明圖片" class="intro-image" /></div>`;
                 } else {
                     contentEl.innerHTML = `<p>${content}</p>`;
                 }
