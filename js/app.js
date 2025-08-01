@@ -682,11 +682,54 @@ class DEMATELSurvey {
                 defaultOption.textContent = '請選擇...';
                 input.appendChild(defaultOption);
                 
+                let hasOtherOption = false;
                 for (const option of field.選項) {
                     const optionEl = document.createElement('option');
                     optionEl.value = option;
                     optionEl.textContent = option;
                     input.appendChild(optionEl);
+                    
+                    if (option === '其他') {
+                        hasOtherOption = true;
+                    }
+                }
+                
+                // 如果有"其他"選項，添加輸入框
+                if (hasOtherOption) {
+                    const otherInputContainer = document.createElement('div');
+                    otherInputContainer.className = 'form-field__other-input';
+                    otherInputContainer.style.display = 'none'; // 預設隱藏
+                    otherInputContainer.style.marginTop = '8px';
+                    
+                    const otherInput = document.createElement('input');
+                    otherInput.type = 'text';
+                    otherInput.id = `${field.編號}_other_text`;
+                    otherInput.name = `${field.編號}_other_text`;
+                    otherInput.className = 'form-field__input form-field__other-text';
+                    otherInput.placeholder = '請輸入內容';
+                    otherInput.tabIndex = -1;
+                    
+                    otherInputContainer.appendChild(otherInput);
+                    
+                    // 監聽下拉選單的變化
+                    input.addEventListener('change', (e) => {
+                        if (e.target.value === '其他') {
+                            otherInputContainer.style.display = 'block'; // 顯示輸入框
+                            otherInput.required = true;
+                            otherInput.focus(); // 自動聚焦到輸入框
+                        } else {
+                            otherInputContainer.style.display = 'none'; // 隱藏輸入框
+                            otherInput.required = false;
+                            otherInput.value = ''; // 清空內容
+                        }
+                    });
+                    
+                    // 將輸入框容器添加到父容器中
+                    container.appendChild(label);
+                    container.appendChild(input);
+                    container.appendChild(otherInputContainer);
+                    
+                    return container;
                 }
                 break;
                 
@@ -713,6 +756,42 @@ class DEMATELSurvey {
                     checkboxContainer.appendChild(checkbox);
                     checkboxContainer.appendChild(checkboxLabel);
                     input.appendChild(checkboxContainer);
+                    
+                    // 如果是"其他"選項，改為 checkbox + 輸入框組合
+                    if (option === '其他') {
+                        // 隱藏原本的標籤文字
+                        checkboxLabel.style.display = 'none';
+                        
+                        // 創建輸入框（直接放在 checkbox 旁邊）
+                        const otherInput = document.createElement('input');
+                        otherInput.type = 'text';
+                        otherInput.id = `${field.編號}_other_text`;
+                        otherInput.name = `${field.編號}_other_text`;
+                        otherInput.className = 'form-field__input form-field__other-text';
+                        otherInput.placeholder = '其他（請輸入內容）';
+                        otherInput.disabled = true; // 預設禁用
+                        otherInput.tabIndex = -1;
+                        
+                        // 調整容器樣式，讓 checkbox 和輸入框在同一行
+                        checkboxContainer.style.display = 'flex';
+                        checkboxContainer.style.alignItems = 'center';
+                        checkboxContainer.style.gap = '8px';
+                        
+                        checkboxContainer.appendChild(otherInput);
+                        
+                        // 監聽其他選項的勾選狀態
+                        checkbox.addEventListener('change', (e) => {
+                            if (e.target.checked) {
+                                otherInput.disabled = false;
+                                otherInput.required = true;
+                                otherInput.focus(); // 自動聚焦到輸入框
+                            } else {
+                                otherInput.disabled = true;
+                                otherInput.required = false;
+                                otherInput.value = ''; // 清空內容
+                            }
+                        });
+                    }
                 }
                 break;
         }
@@ -1096,12 +1175,44 @@ class DEMATELSurvey {
         
         for (const field of this.config.基本資料) {
             if (field.必填) {
-                const value = formData.get(field.編號);
-                if (!value || value.trim() === '') {
-                    errors.push({
-                        field: field.編號,
-                        message: `${field.名稱}為必填欄位`
-                    });
+                if (field.類型 === 'checkbox') {
+                    const values = formData.getAll(field.編號);
+                    if (!values || values.length === 0) {
+                        errors.push({
+                            field: field.編號,
+                            message: `${field.名稱}為必填欄位`
+                        });
+                    } else {
+                        // 檢查是否選擇了"其他"但沒有填寫詳細內容
+                        if (values.includes('其他')) {
+                            const otherText = formData.get(`${field.編號}_other_text`);
+                            if (!otherText || otherText.trim() === '') {
+                                errors.push({
+                                    field: `${field.編號}_other_text`,
+                                    message: `選擇"其他"時，請填寫詳細內容`
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    const value = formData.get(field.編號);
+                    if (!value || value.trim() === '') {
+                        errors.push({
+                            field: field.編號,
+                            message: `${field.名稱}為必填欄位`
+                        });
+                    } else {
+                        // 檢查是否選擇了"其他"但沒有填寫詳細內容
+                        if (value === '其他') {
+                            const otherText = formData.get(`${field.編號}_other_text`);
+                            if (!otherText || otherText.trim() === '') {
+                                errors.push({
+                                    field: `${field.編號}_other_text`,
+                                    message: `選擇"其他"時，請填寫詳細內容`
+                                });
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1140,9 +1251,35 @@ class DEMATELSurvey {
         for (const field of this.config.基本資料) {
             if (field.類型 === 'checkbox') {
                 const values = formData.getAll(field.編號);
-                this.basicInfo[field.編號] = values;
+                
+                // 如果選擇了"其他"，將其他文字內容替換"其他"選項
+                if (values.includes('其他')) {
+                    const otherText = formData.get(`${field.編號}_other_text`);
+                    if (otherText && otherText.trim() !== '') {
+                        // 移除"其他"選項，加入實際填寫的內容
+                        const filteredValues = values.filter(v => v !== '其他');
+                        filteredValues.push(otherText.trim());
+                        this.basicInfo[field.編號] = filteredValues;
+                    } else {
+                        this.basicInfo[field.編號] = values;
+                    }
+                } else {
+                    this.basicInfo[field.編號] = values;
+                }
             } else {
-                this.basicInfo[field.編號] = formData.get(field.編號);
+                const value = formData.get(field.編號);
+                
+                // 如果選擇了"其他"，將其他文字內容替換"其他"選項
+                if (value === '其他') {
+                    const otherText = formData.get(`${field.編號}_other_text`);
+                    if (otherText && otherText.trim() !== '') {
+                        this.basicInfo[field.編號] = otherText.trim();
+                    } else {
+                        this.basicInfo[field.編號] = value;
+                    }
+                } else {
+                    this.basicInfo[field.編號] = value;
+                }
             }
         }
         
@@ -1159,9 +1296,35 @@ class DEMATELSurvey {
         for (const field of this.config.基本資料) {
             if (field.類型 === 'checkbox') {
                 const values = formData.getAll(field.編號);
-                basicInfo[field.編號] = values;
+                
+                // 如果選擇了"其他"，將其他文字內容替換"其他"選項
+                if (values.includes('其他')) {
+                    const otherText = formData.get(`${field.編號}_other_text`);
+                    if (otherText && otherText.trim() !== '') {
+                        // 移除"其他"選項，加入實際填寫的內容
+                        const filteredValues = values.filter(v => v !== '其他');
+                        filteredValues.push(otherText.trim());
+                        basicInfo[field.編號] = filteredValues;
+                    } else {
+                        basicInfo[field.編號] = values;
+                    }
+                } else {
+                    basicInfo[field.編號] = values;
+                }
             } else {
-                basicInfo[field.編號] = formData.get(field.編號);
+                const value = formData.get(field.編號);
+                
+                // 如果選擇了"其他"，將其他文字內容替換"其他"選項
+                if (value === '其他') {
+                    const otherText = formData.get(`${field.編號}_other_text`);
+                    if (otherText && otherText.trim() !== '') {
+                        basicInfo[field.編號] = otherText.trim();
+                    } else {
+                        basicInfo[field.編號] = value;
+                    }
+                } else {
+                    basicInfo[field.編號] = value;
+                }
             }
         }
         
@@ -1174,13 +1337,51 @@ class DEMATELSurvey {
     loadBasicInfoToForm() {
         for (const [key, value] of Object.entries(this.basicInfo)) {
             const field = document.getElementById(key);
-            if (field) {
-                if (Array.isArray(value)) {
-                    // 複選框
-                    const checkboxes = document.querySelectorAll(`input[name="${key}"]`);
-                    checkboxes.forEach(cb => {
+            if (!field) continue;
+            
+            // 找到對應的配置
+            const fieldConfig = this.config.基本資料.find(f => f.編號 === key);
+            if (!fieldConfig) continue;
+            
+            if (Array.isArray(value)) {
+                // 複選框處理
+                const checkboxes = document.querySelectorAll(`input[name="${key}"]`);
+                checkboxes.forEach(cb => {
+                    // 檢查值是否在原始選項中
+                    if (fieldConfig.選項.includes(cb.value)) {
                         cb.checked = value.includes(cb.value);
-                    });
+                    } else if (cb.value === '其他') {
+                        // 檢查是否有不在原始選項中的值（表示是"其他"內容）
+                        const hasOtherContent = value.some(v => !fieldConfig.選項.includes(v));
+                        cb.checked = hasOtherContent;
+                        
+                        if (hasOtherContent) {
+                            const otherInput = cb.parentNode.querySelector('.form-field__other-text');
+                            if (otherInput) {
+                                otherInput.disabled = false;
+                                otherInput.required = true;
+                                // 找到不在原始選項中的值作為"其他"內容
+                                const otherContent = value.find(v => !fieldConfig.選項.includes(v));
+                                if (otherContent) {
+                                    otherInput.value = otherContent;
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                // 下拉選單和文字輸入處理
+                if (fieldConfig.選項 && !fieldConfig.選項.includes(value)) {
+                    // 如果值不在原始選項中，表示是"其他"內容
+                    field.value = '其他';
+                    
+                    const otherInputContainer = field.parentNode.querySelector('.form-field__other-input');
+                    const otherInput = field.parentNode.querySelector('.form-field__other-text');
+                    if (otherInputContainer && otherInput) {
+                        otherInputContainer.style.display = 'block';
+                        otherInput.required = true;
+                        otherInput.value = value;
+                    }
                 } else {
                     field.value = value;
                 }
