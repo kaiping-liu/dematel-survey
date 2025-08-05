@@ -2393,20 +2393,21 @@ class DEMATELSurvey {
     }
 
     /**
-     * 統一的原始資料準備函數 - 同時用於下載JSON和QR Code生成
+     * 統一的原始資料準備函數 - 用於下載JSON、QR Code生成和Google Sheet上傳
      */
     prepareOriginalData() {
         // 轉換答案格式
         const convertedAnswers = this.convertAnswersForDownload(this.answers);
         
-        // 統一的原始資料結構
+        // 統一的原始資料結構，包含 totalQuestions
         const originalData = {
             surveyId: this.surveyId,
             basicInfo: this.basicInfo,
             answers: convertedAnswers,
             configMd5: this.currentMd5,
             startTime: this.startTime,
-            endTime: this.endTime
+            endTime: this.endTime,
+            totalQuestions: Object.keys(this.answers).length
         };
         
         return originalData;
@@ -2426,12 +2427,7 @@ class DEMATELSurvey {
         // 使用統一的原始資料準備函數
         const originalData = this.prepareOriginalData();
 
-        const results = {
-            ...originalData,
-            totalQuestions: Object.keys(this.answers).length
-        };
-        
-        const blob = new Blob([JSON.stringify(results, null, 2)], {
+        const blob = new Blob([JSON.stringify(originalData, null, 2)], {
             type: 'application/json'
         });
         
@@ -2475,28 +2471,8 @@ class DEMATELSurvey {
             // 準備上傳資料
             const originalData = this.prepareOriginalData();
             
-            // 將基本資料扁平化為更適合Google Sheet的格式
-            const flattenedBasicInfo = {};
-            for (const [key, value] of Object.entries(originalData.basicInfo)) {
-                if (Array.isArray(value)) {
-                    flattenedBasicInfo[key] = value.join(', ');
-                } else {
-                    flattenedBasicInfo[key] = value;
-                }
-            }
-
-            // 構建上傳的 payload
-            const payload = {
-                surveyId: originalData.surveyId,
-                configMd5: originalData.configMd5,
-                startTime: originalData.startTime,
-                endTime: originalData.endTime,
-                totalQuestions: Object.keys(originalData.answers).length,
-                timestamp: new Date().toISOString(),
-                ...flattenedBasicInfo,
-                // 將完整的答案資料作為JSON字串存儲
-                answersData: JSON.stringify(originalData.answers)
-            };
+            // 直接使用原始資料作為 payload
+            const payload = originalData;
 
             // 發送到 Google Sheet
             const response = await fetch(scriptUrl, {
@@ -2551,17 +2527,8 @@ class DEMATELSurvey {
             // 1. 使用統一的原始資料準備函數
             const originalData = this.prepareOriginalData();
             
-            // 添加 totalQuestions 以保持與下載格式一致
-            const dataWithTotal = {
-                ...originalData,
-                totalQuestions: Object.keys(this.answers).length
-            };
-            
-            // 去空白處理
-            const compactString = JSON.stringify(dataWithTotal);
-
             // 2. 自動縮短 - Key 用 a,b,c... Value 用 #0,#1...
-            const { vObj, keyMap, valMap } = this.autoShorten(dataWithTotal);
+            const { vObj, keyMap, valMap } = this.autoShorten(originalData);
 
             // 3. 雜湊 - 取 SHA-256 前 8 byte（16 hex）
             const dataForHash = JSON.stringify(vObj);
@@ -2591,7 +2558,7 @@ class DEMATELSurvey {
             const base64 = btoa(String.fromCharCode.apply(null, compressed));
             
             // 計算壓縮率
-            const originalSize = JSON.stringify(dataWithTotal).length;
+            const originalSize = JSON.stringify(originalData).length;
             const compressionRatio = Math.round((1 - base64.length / originalSize) * 100);
 
             // 6. 分段 - 每段固定 800 個 base64 字元
