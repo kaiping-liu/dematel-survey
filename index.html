@@ -143,13 +143,17 @@
                 </p>
                 
                 <div class="finish-card__actions">
+                    <button class="btn btn--success" id="uploadBtn" tabindex="-1">
+                        <span class="btn__icon">☁</span>
+                        上傳資料
+                    </button>
                     <button class="btn btn--primary" id="downloadBtn" tabindex="-1">
                         <span class="btn__icon">⬇</span>
-                        下載結果
+                        下載資料檔
                     </button>
                     <button class="btn btn--secondary" id="generateQRBtn" tabindex="-1">
                         <span class="btn__icon">⬛</span>
-                        產生 QR Code
+                        產生資料 QR Code
                     </button>
                     <button class="btn btn--outline" id="restartSurveyBtn" tabindex="-1">重新開始</button>
                 </div>
@@ -251,12 +255,12 @@
         </div>
     </div>
 
-    <!-- Config Changed Modal -->
-    <div class="modal" id="configChangedModal" role="dialog" aria-modal="true" aria-labelledby="configChangedTitle">
+    <!-- Config Changed Modal (Force Clear) -->
+    <div class="modal" id="configChangedForceModal" role="dialog" aria-modal="true" aria-labelledby="configChangedForceTitle">
         <div class="modal__backdrop"></div>
         <div class="modal__content">
             <div class="modal__header">
-                <h3 class="modal__title" id="configChangedTitle">設定檔已變更</h3>
+                <h3 class="modal__title" id="configChangedForceTitle">設定檔已變更</h3>
             </div>
             
             <div class="modal__body">
@@ -268,7 +272,31 @@
             </div>
             
             <div class="modal__footer">
-                <button class="btn btn--primary" id="restartFromConfigChangeBtn" tabindex="-1">重新開始</button>
+                <button class="btn btn--primary" id="restartFromConfigForceBtn" tabindex="-1">重新開始</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Config Changed Modal (Ask User) -->
+    <div class="modal" id="configChangedAskModal" role="dialog" aria-modal="true" aria-labelledby="configChangedAskTitle">
+        <div class="modal__backdrop"></div>
+        <div class="modal__content">
+            <div class="modal__header">
+                <h3 class="modal__title" id="configChangedAskTitle">設定檔已變更</h3>
+            </div>
+            
+            <div class="modal__body">
+                <div class="config-changed-notice">
+                    <p><strong>⚠️ 重要提醒</strong></p>
+                    <p>問卷配置已更新。</p>
+                    <p>建議清除之前的資料以確保一致性。</p>
+                </div>
+            </div>
+            
+            <div class="modal__footer">
+                <button class="btn btn--secondary" id="clearDataBtn" tabindex="-1">清除資料並重新開始</button>
+                <button class="btn btn--primary" id="keepDataBtn" tabindex="-1">保留資料繼續使用</button>
+                
             </div>
         </div>
     </div>

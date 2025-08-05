@@ -43,11 +43,9 @@ class DEMATELSurvey {
         
         // 保存計時器（防抖用）
         this.saveTimer = null;
-        this.lastSavedIndex = null;
-        this.lastSavedPhase = null;
         
         // 生成問卷唯一編號
-        this.surveyId = this.generateUUID();
+        this.surveyId = this.generateSurveyId();
         
         // 時間記錄
         this.startTime = null;     // 開始填寫時間（讀完說明頁開始填的時間）
@@ -87,7 +85,14 @@ class DEMATELSurvey {
      */
     async loadConfig() {
         try {
-            // 強制重新抓取，禁用快取
+            // 使用統一的配置檢查函數
+            const configResult = await this.validateAndUpdateConfig();
+            
+            if (!configResult.success) {
+                throw new Error(`配置檢查失敗: ${configResult.error}`);
+            }
+            
+            // 重新載入配置（因為統一函數已經驗證過了）
             const timestamp = Date.now();
             const url = `dematel-structure.json?t=${timestamp}`;
             
@@ -107,25 +112,131 @@ class DEMATELSurvey {
             const configText = await response.text();
             this.config = JSON.parse(configText);
             
-            // 計算新的 MD5
-            const newMD5 = await this.calculateMD5(configText);
+            // 配置載入後重新生成問卷ID（如果是DEBUG模式會使用timestamp格式）
+            this.surveyId = this.generateSurveyId();
             
             // 驗證設定檔
             this.validateConfig();
             
-            // 計算資料雜湊
-            this.calculateDataHash();
-            
             // 產生問卷
             await this.generateQuestions();
             
-            // 檢查 MD5 變化（必須在問題生成之後）
-            await this.checkConfigChanges(newMD5);
+            // 檢查是否啟用DEBUG
+            if (this.config?.settings?.debug === true) {
+                console.log('🐛 DEBUG啟用：自動產生測試資料並跳到結果頁面');
+                await this.enableDebugMode();
+                return;
+            }
+            
+            // 根據配置檢查結果決定顯示的頁面
+            if (configResult.action === 'first_time' || configResult.action === 'force_clear' || configResult.action === 'user_clear') {
+                // 新使用者或資料已清除，顯示介紹頁面
+                this.showView('intro');
+            } else {
+                // 配置未變更或使用者選擇保留資料，檢查是否有未完成的問卷
+                await this.showConfigUnchangedDialog();
+            }
             
         } catch (error) {
             console.error('載入設定檔詳細錯誤:', error);
             throw new Error(`載入設定檔失敗: ${error.message}`);
         }
+    }
+
+    /**
+     * 啟用DEBUG：自動產生測試資料並跳到結果頁面
+     */
+    async enableDebugMode() {
+        try {
+            console.log('🐛 開始DEBUG初始化...');
+            
+            // 1. 產生假的基本資料
+            this.generateFakeBasicInfo();
+            
+            // 2. 產生假的問卷答案
+            this.generateFakeAnswers();
+            
+            // 3. 設定完成狀態
+            this.currentPhase = 'finish';
+            this.endTime = Date.now();
+            
+            // 4. 保存資料到localStorage
+            this.forceSaveToLocal();
+            
+            // 5. 直接跳到結果頁面
+            this.showView('finish');
+            this.updateProgress();
+            
+            console.log('🎉 DEBUG初始化完成！已跳轉到結果頁面');
+            console.log('📊 生成的資料:', {
+                basicInfo: this.basicInfo,
+                answers: Object.keys(this.answers).length + ' 個答案',
+                surveyId: this.surveyId
+            });
+            
+        } catch (error) {
+            console.error('❌ DEBUG初始化失敗:', error);
+            // 如果DEBUG失敗，回到正常流程
+            this.showView('intro');
+        }
+    }
+
+    /**
+     * 產生假的基本資料
+     */
+    generateFakeBasicInfo() {
+        this.basicInfo = {
+            sex: '男性',
+            age: '30',
+            education: '碩士',
+            years_in_tech: '5',
+            ai_tools: ['OpenAI（包括 ChatGPT, DALL·E 3, GPT-4 等）', 'Google（包括 Google Gemini, Notebook LM 等）'],
+            ai_tools_usage_time: '1年到2年',
+            ai_tools_usage_time_weekly: '1-5 小時'
+        };
+        
+        console.log('📝 已產生假的基本資料:', this.basicInfo);
+    }
+
+    /**
+     * 產生假的問卷答案
+     */
+    generateFakeAnswers() {
+        const allQuestions = this.questions;
+        this.answers = {};
+        
+        // 為每個問題產生隨機答案
+        allQuestions.forEach(question => {
+            // 隨機選擇關係類型
+            const relationTypes = ['none', 'to', 'from', 'bi'];
+            const randomRelation = relationTypes[Math.floor(Math.random() * relationTypes.length)];
+            
+            let score1 = 0;
+            let score2 = 0;
+            
+            if (randomRelation !== 'none') {
+                // 如果有關係，產生隨機分數 (1-4)
+                score1 = Math.floor(Math.random() * 4) + 1;
+                
+                if (randomRelation === 'bi') {
+                    // 雙向影響需要兩個分數
+                    score2 = Math.floor(Math.random() * 4) + 1;
+                }
+            }
+            
+            this.answers[question.key] = {
+                relation: randomRelation,
+                score1: score1,
+                score2: score2,
+                timestamp: Date.now() - Math.floor(Math.random() * 1000000) // 隨機過去時間
+            };
+        });
+        
+        console.log(`🎲 已產生 ${Object.keys(this.answers).length} 個假答案`);
+        
+        // 設定進度相關變數
+        this.maxReachedIndex = allQuestions.length - 1;
+        this.currentIndex = this.maxReachedIndex;
     }
 
     /**
@@ -137,30 +248,6 @@ class DEMATELSurvey {
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    /**
-     * 檢查設定檔變化
-     */
-    async checkConfigChanges(newMD5) {
-        const storedMD5 = localStorage.getItem('dematel_config_md5');
-        
-        if (!storedMD5) {
-            // 第一次載入，直接儲存 MD5 並顯示介紹頁面
-            localStorage.setItem('dematel_config_md5', newMD5);
-            this.currentMd5 = newMD5;
-            this.showView('intro');
-            return;
-        }
-        
-        if (storedMD5 === newMD5) {
-            // MD5 相同，檢查是否有未完成的問卷
-            this.currentMd5 = newMD5;
-            await this.showConfigUnchangedDialog();
-        } else {
-            // MD5 不同，設定檔已變更
-            await this.showConfigChangedDialog(newMD5);
-        }
     }
 
     /**
@@ -185,20 +272,17 @@ class DEMATELSurvey {
     }
 
     /**
-     * 顯示設定檔已變更對話框
-     */
-    async showConfigChangedDialog(newMD5) {
-        return new Promise((resolve) => {
-            this.showConfigChangedModal(newMD5, resolve);
-        });
-    }
-
-    /**
      * 驗證設定檔結構
      */
     validateConfig() {
         if (!this.config) {
             throw new Error('設定檔為空');
+        }
+
+        // 檢查DEBUG設定
+        if (this.config?.settings?.debug === true) {
+            console.warn('⚠️ DEBUG已啟用！這會自動產生測試資料並跳過問卷流程。');
+            console.warn('⚠️ 請確保這是在開發環境中，生產環境請將DEBUG設為false。');
         }
 
         // 檢查必要欄位
@@ -259,35 +343,6 @@ class DEMATELSurvey {
                 }
             }
         }
-    }
-
-    /**
-     * 計算資料雜湊
-     */
-    calculateDataHash() {
-        const dataString = JSON.stringify(this.config);
-        this.dataHash = this.simpleHash(dataString);
-        
-        // 檢查是否需要清除舊資料
-        const storedHash = localStorage.getItem('dematel_data_hash');
-        if (storedHash && storedHash !== this.dataHash) {
-            this.clearAllData();
-        }
-        
-        localStorage.setItem('dematel_data_hash', this.dataHash);
-    }
-
-    /**
-     * 簡單雜湊函數
-     */
-    simpleHash(str) {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // 轉換為 32 位整數
-        }
-        return hash.toString();
     }
 
     /**
@@ -947,6 +1002,8 @@ class DEMATELSurvey {
                 this.hideModal();
             } else if (id === 'downloadBtn') {
                 this.downloadResults();
+            } else if (id === 'uploadBtn') {
+                this.uploadResults();
             } else if (id === 'generateQRBtn') {
                 this.generateQRCode();
             } else if (id === 'restartSurveyBtn') {
@@ -2359,9 +2416,10 @@ class DEMATELSurvey {
      * 下載結果
      */
     async downloadResults() {
-        // 先驗證配置文件MD5
-        const isValid = await this.validateConfigBeforeAction();
-        if (!isValid) {
+        // 使用統一的配置檢查函數
+        const configResult = await this.validateAndUpdateConfig();
+        if (!configResult.success) {
+            alert('配置檢查失敗：' + configResult.error);
             return;
         }
 
@@ -2388,18 +2446,104 @@ class DEMATELSurvey {
     }
 
     /**
+     * 上傳結果到 Google Sheet
+     */
+    async uploadResults() {
+        // 使用統一的配置檢查函數
+        const configResult = await this.validateAndUpdateConfig();
+        if (!configResult.success) {
+            alert('配置檢查失敗：' + configResult.error);
+            return;
+        }
+
+        // 檢查是否有設定 SCRIPT_URL
+        const scriptUrl = this.config?.settings?.script_url;
+        if (!scriptUrl || scriptUrl.trim() === '') {
+            alert('錯誤：尚未設定 Google Sheet API URL。\n請聯繫管理員設定 SCRIPT_URL。');
+            return;
+        }
+
+        const uploadBtn = document.getElementById('uploadBtn');
+        if (!uploadBtn) return;
+
+        // 顯示上傳中狀態
+        uploadBtn.disabled = true;
+        const originalText = uploadBtn.innerHTML;
+        uploadBtn.innerHTML = '<span class="btn__icon">⏳</span>上傳中...';
+
+        try {
+            // 準備上傳資料
+            const originalData = this.prepareOriginalData();
+            
+            // 將基本資料扁平化為更適合Google Sheet的格式
+            const flattenedBasicInfo = {};
+            for (const [key, value] of Object.entries(originalData.basicInfo)) {
+                if (Array.isArray(value)) {
+                    flattenedBasicInfo[key] = value.join(', ');
+                } else {
+                    flattenedBasicInfo[key] = value;
+                }
+            }
+
+            // 構建上傳的 payload
+            const payload = {
+                surveyId: originalData.surveyId,
+                configMd5: originalData.configMd5,
+                startTime: originalData.startTime,
+                endTime: originalData.endTime,
+                totalQuestions: Object.keys(originalData.answers).length,
+                timestamp: new Date().toISOString(),
+                ...flattenedBasicInfo,
+                // 將完整的答案資料作為JSON字串存儲
+                answersData: JSON.stringify(originalData.answers)
+            };
+
+            // 發送到 Google Sheet
+            const response = await fetch(scriptUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'text/plain;charset=utf-8' 
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const responseText = await response.text();
+            let responseData;
+            try {
+                responseData = JSON.parse(responseText);
+            } catch {
+                responseData = { ok: false, raw: responseText };
+            }
+
+            if (response.ok && responseData.ok) {
+                alert('✅ 資料已成功上傳到 Google Sheet！\n問卷編號：' + originalData.surveyId);
+            } else {
+                console.error('Server response:', responseData);
+                alert('❌ 上傳失敗：' + (responseData.error || response.status + ' ' + responseText));
+            }
+
+        } catch (error) {
+            console.error('上傳錯誤:', error);
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                alert('❌ 網路錯誤：無法連接到 Google Sheet 服務，請檢查網路連線後重試。');
+            } else {
+                alert('❌ 上傳失敗：' + error.message);
+            }
+        } finally {
+            // 恢復按鈕狀態
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = originalText;
+        }
+    }
+
+    /**
      * 產生 QR Code（使用進階壓縮和分段）
      */
     async generateQRCode() {
-        // 先驗證配置文件MD5
-        try {
-            const isValid = await this.validateConfigBeforeAction();
-            if (!isValid) {
-                return;
-            }
-        } catch (error) {
-            console.error('❌ 配置驗證失敗:', error);
-            alert('配置驗證失敗：' + error.message);
+        // 使用統一的配置檢查函數
+        const configResult = await this.validateAndUpdateConfig();
+        if (!configResult.success) {
+            alert('配置檢查失敗：' + configResult.error);
             return;
         }
 
@@ -2540,9 +2684,6 @@ class DEMATELSurvey {
         };
     }
 
-    /**
-     * 穩定的 JSON 字串化（固定順序）
-     */
     /**
      * 計算 SHA-256 雜湊
      */
@@ -2778,10 +2919,6 @@ class DEMATELSurvey {
             localStorage.setItem('dematel_start_time', this.startTime ? this.startTime.toString() : '');
             localStorage.setItem('dematel_end_time', this.endTime ? this.endTime.toString() : '');
             
-            // 記錄上次保存的狀態
-            this.lastSavedIndex = this.currentIndex;
-            this.lastSavedPhase = this.currentPhase;
-            
             console.log(`💾 資料已保存到本地儲存 (階段: ${this.currentPhase}, 題目: ${this.currentIndex}, 編號: ${this.surveyId})`);
         } catch (error) {
             if (error.name === 'QuotaExceededError') {
@@ -2796,8 +2933,6 @@ class DEMATELSurvey {
                     localStorage.setItem('dematel_survey_id', this.surveyId);
                     localStorage.setItem('dematel_start_time', this.startTime ? this.startTime.toString() : '');
                     localStorage.setItem('dematel_end_time', this.endTime ? this.endTime.toString() : '');
-                    this.lastSavedIndex = this.currentIndex;
-                    this.lastSavedPhase = this.currentPhase;
                     console.log('💾 清理後重新保存成功');
                 } catch (retryError) {
                     console.error('❌ localStorage 保存失敗:', retryError);
@@ -2820,8 +2955,6 @@ class DEMATELSurvey {
             'dematel_max_reached_index',
             'dematel_basic_info',
             'dematel_answers',
-            'dematel_data_hash',
-            'dematel_shuffle_seed',
             'dematel_survey_id',
             'dematel_start_time',
             'dematel_end_time'
@@ -2842,7 +2975,7 @@ class DEMATELSurvey {
         this.answers = {};
         
         // 生成新的問卷編號
-        this.surveyId = this.generateUUID();
+        this.surveyId = this.generateSurveyId();
     }
 
     /**
@@ -2912,39 +3045,57 @@ class DEMATELSurvey {
     }
 
     /**
-     * 顯示設定檔變更 Modal
+     * 顯示設定檔變更 Modal（強制清空模式）
      */
-    showConfigChangedModal(newMD5, resolve) {
-        const modal = document.getElementById('configChangedModal');
-        const restartBtn = document.getElementById('restartFromConfigChangeBtn');
-        
-        // 顯示 Modal
-        modal.classList.add('show');
-        
-        // 設定事件處理器
-        const handleRestart = () => {
-            modal.classList.remove('show');
-            restartBtn.removeEventListener('click', handleRestart);
+    showConfigChangedForceModal() {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('configChangedForceModal');
+            const restartBtn = document.getElementById('restartFromConfigForceBtn');
             
-            // 清除所有資料並更新 MD5
-            this.clearAllData();
-            localStorage.setItem('dematel_config_md5', newMD5);
-            this.currentMd5 = newMD5;
+            // 顯示 Modal
+            modal.classList.add('show');
             
-            // 重置應用程式狀態到初始狀態
-            this.currentPhase = 'intro';
-            this.currentQuestionIndex = 0;
-            this.responses = {};
-            this.basicInfo = {};
+            // 設定事件處理器
+            const handleRestart = () => {
+                modal.classList.remove('show');
+                restartBtn.removeEventListener('click', handleRestart);
+                resolve();
+            };
             
-            // 顯示說明頁面而不是基本資料頁面
-            this.showView('intro');
-            this.updateProgress();
+            restartBtn.addEventListener('click', handleRestart);
+        });
+    }
+
+    /**
+     * 顯示設定檔變更 Modal（詢問使用者模式）
+     */
+    showConfigChangedAskModal() {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('configChangedAskModal');
+            const keepDataBtn = document.getElementById('keepDataBtn');
+            const clearDataBtn = document.getElementById('clearDataBtn');
             
-            resolve();
-        };
-        
-        restartBtn.addEventListener('click', handleRestart);
+            // 顯示 Modal
+            modal.classList.add('show');
+            
+            // 設定事件處理器
+            const handleKeepData = () => {
+                modal.classList.remove('show');
+                keepDataBtn.removeEventListener('click', handleKeepData);
+                clearDataBtn.removeEventListener('click', handleClearData);
+                resolve(false); // 不清除資料
+            };
+
+            const handleClearData = () => {
+                modal.classList.remove('show');
+                keepDataBtn.removeEventListener('click', handleKeepData);
+                clearDataBtn.removeEventListener('click', handleClearData);
+                resolve(true); // 清除資料
+            };
+            
+            keepDataBtn.addEventListener('click', handleKeepData);
+            clearDataBtn.addEventListener('click', handleClearData);
+        });
     }
 
     /**
@@ -2973,6 +3124,21 @@ class DEMATELSurvey {
     }
 
     /**
+     * 生成問卷唯一編號
+     * DEBUG模式下使用 debug-時間戳記，正常模式下使用UUID
+     */
+    generateSurveyId() {
+        // 檢查是否為DEBUG模式（只有在config已載入時才檢查）
+        if (this.config?.settings?.debug === true) {
+            const timestamp = Date.now();
+            return `debug-${timestamp}`;
+        }
+        
+        // 正常模式使用UUID
+        return this.generateUUID();
+    }
+
+    /**
      * 生成 UUID
      */
     generateUUID() {
@@ -2984,13 +3150,17 @@ class DEMATELSurvey {
     }
 
     /**
-     * 在執行關鍵操作前驗證配置文件MD5
+     * 統一的配置檢查函數
+     * 1. 檢查有沒有dematel_config_md5
+     * 2. 有的話下載最新的json並計算md5
+     * 3. 比較md5，一樣的話繼續，不一樣的話根據設定處理
+     * 4. 寫入新的md5到dematel_config_md5
      */
-    async validateConfigBeforeAction() {
+    async validateAndUpdateConfig() {
         try {
-            console.log('🔍 驗證配置文件MD5...');
+            console.log('🔍 執行統一配置檢查...');
             
-            // 強制重新抓取，禁用快取（與 loadConfig 相同的方式）
+            // 強制重新抓取最新的配置檔案，禁用快取
             const timestamp = Date.now();
             const url = `dematel-structure.json?t=${timestamp}`;
             
@@ -3009,24 +3179,73 @@ class DEMATELSurvey {
             
             const currentConfigText = await response.text();
             const currentMd5 = await this.calculateMD5(currentConfigText);
+            const storedMD5 = localStorage.getItem('dematel_config_md5');
             
-            console.log('當前 MD5:', currentMd5);
-            console.log('載入時 MD5:', this.currentMd5);
+            console.log('當前配置 MD5:', currentMd5);
+            console.log('儲存的 MD5:', storedMD5);
             
-            if (currentMd5 !== this.currentMd5) {
-                console.warn('⚠️ 配置文件已變更，強制重新填寫');
-                alert('問卷配置已更新，請重新開始填寫。');
-                this.clearAllData();
-                window.location.reload();
-                return false;
+            // 解析配置以獲取強制清空設定
+            let currentConfig;
+            try {
+                currentConfig = JSON.parse(currentConfigText);
+            } catch (error) {
+                throw new Error('配置檔案格式錯誤: ' + error.message);
             }
             
-            console.log('✅ 配置文件驗證通過');
-            return true;
+            const forceCllearOnChange = currentConfig?.settings?.force_clear_on_config_change !== false; // 預設為true
+            
+            // 如果沒有儲存的MD5（第一次使用）
+            if (!storedMD5) {
+                console.log('📝 第一次使用，儲存MD5');
+                localStorage.setItem('dematel_config_md5', currentMd5);
+                this.currentMd5 = currentMd5;
+                return { success: true, action: 'first_time' };
+            }
+            
+            // 如果MD5相同，直接繼續
+            if (storedMD5 === currentMd5) {
+                console.log('✅ 配置檔案未變更');
+                this.currentMd5 = currentMd5;
+                return { success: true, action: 'no_change' };
+            }
+            
+            // MD5不同，配置已變更
+            console.log('⚠️ 配置檔案已變更');
+            
+            if (forceCllearOnChange) {
+                // 強制清空模式
+                console.log('🗑️ 強制清空模式：顯示強制清空對話框');
+                await this.showConfigChangedForceModal();
+                this.clearAllData();
+                localStorage.setItem('dematel_config_md5', currentMd5);
+                this.currentMd5 = currentMd5;
+                return { success: true, action: 'force_clear' };
+            } else {
+                // 詢問模式
+                console.log('❓ 詢問模式：顯示使用者選擇對話框');
+                const userChoice = await this.showConfigChangedAskModal();
+                
+                if (userChoice) {
+                    console.log('👤 使用者選擇：清除資料');
+                    this.clearAllData();
+                    localStorage.setItem('dematel_config_md5', currentMd5);
+                    this.currentMd5 = currentMd5;
+                    return { success: true, action: 'user_clear' };
+                } else {
+                    console.log('👤 使用者選擇：保留資料');
+                    // 不清除資料，但更新MD5以避免重複提示
+                    localStorage.setItem('dematel_config_md5', currentMd5);
+                    this.currentMd5 = currentMd5;
+                    return { success: true, action: 'user_keep' };
+                }
+            }
         } catch (error) {
-            console.error('❌ 驗證配置文件時發生錯誤:', error);
-            alert('驗證配置文件時發生錯誤，請重新整理頁面。');
-            return false;
+            console.error('❌ 配置檢查時發生錯誤:', error);
+            return { 
+                success: false, 
+                error: error.message,
+                action: 'error'
+            };
         }
     }
 }

@@ -17,8 +17,11 @@
 - **問卷進度管理**：自動記錄填寫進度，支援恢復、重新開始、進度條顯示。
 - **智能數據壓縮**：使用 Pako 進行壓縮，並結合自動縮短演算法減少 QR Code 數量。
 - **QR Code 匯出**：自動分段壓縮數據並生成多個 QR Code，支援截圖回傳。
+- **Google Sheet 上傳**：支援直接將問卷結果上傳至 Google Sheet，方便資料收集與分析。
+- **統一配置檢查**：所有關鍵操作（下載、上傳、QR生成）都使用統一的配置檢查機制，確保資料一致性。
+- **智能配置管理**：支援強制清空或詢問模式，靈活處理配置檔案變更情況。
 - **資料完整性驗證**：每份問卷皆有唯一 SHA-256 雜湊值，確保資料未被竄改。
-- **設定檔變更偵測**：自動偵測問卷結構檔異動，並提示使用者重新填寫。
+- **設定檔變更偵測**：自動偵測問卷結構檔異動，並根據設定處理資料清空策略。
 - **離線支援**：純前端實作，無需伺服器即可完整運作。
 - **多語系與字體支援**：預設繁體中文，內建 Noto Sans TC 字體。
 - **詳細錯誤提示與防呆設計**：表單、問卷、QR code 產生等皆有完整錯誤處理與提示。
@@ -42,9 +45,13 @@ dematel-survey/
 │   ├── pako.min.js         # 數據壓縮庫
 │   ├── qrcode.min.js       # QR Code 生成庫
 │   └── README.md           # 第三方庫說明
-├── dematel-structure.json  # 問卷結構配置檔案
-├── index.html              # 主要應用程式入口
-└── README.md               # 專案說明
+├── dematel-structure.json      # 問卷結構配置檔案
+├── google-apps-script-example.js # Google Apps Script 範例程式
+├── google-sheet-test.html     # Google Sheet 上傳功能測試頁面
+├── config-check-test.html     # 統一配置檢查功能測試頁面
+├── GOOGLE_SHEET_SETUP.md      # Google Sheet 設定指南
+├── index.html                 # 主要應用程式入口
+└── README.md                  # 專案說明
 ```
 
 ## 🛠️ 技術架構
@@ -74,8 +81,24 @@ dematel-survey/
 2. **完成問卷評估**：依序進行構面與準則兩階段配對評分。
 3. **即時儲存進度**：可隨時中斷、關閉網頁，重新開啟自動恢復。
 4. **生成 QR Code**：填寫完成後，系統自動壓縮並分段產生 QR Code。
-5. **截圖回傳**：將所有 QR Code 截圖並提交。
+5. **上傳至 Google Sheet**：（可選）直接將結果上傳至 Google 試算表。
+6. **截圖回傳**：將所有 QR Code 截圖並提交。
 
+## ☁️ Google Sheet 上傳設定
+
+如需啟用 Google Sheet 上傳功能，請按照以下步驟設定：
+
+1. **查看設定指南**：詳細步驟請參考 [`GOOGLE_SHEET_SETUP.md`](GOOGLE_SHEET_SETUP.md)
+2. **測試上傳功能**：使用 [`google-sheet-test.html`](google-sheet-test.html) 測試連線
+3. **設定 URL**：在 `dematel-structure.json` 中設定 `SCRIPT_URL`
+
+```json
+{
+  "設定": {
+    "SCRIPT_URL": "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
+  }
+}
+```
 
 ## 🔧 問卷結構設定檔（dematel-structure.json）
 
