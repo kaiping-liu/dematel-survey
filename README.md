@@ -25,6 +25,7 @@
 - **離線支援**：純前端實作，無需伺服器即可完整運作。
 - **多語系與字體支援**：預設繁體中文，內建 Noto Sans TC 字體。
 - **詳細錯誤提示與防呆設計**：表單、問卷、QR code 產生等皆有完整錯誤處理與提示。
+- **資源載入優化**：CDN 優先載入策略，本地容錯機制，確保在各種網路環境下穩定運作。
 
 ## 🚀 快速開始
 
@@ -39,7 +40,8 @@ dematel-survey/
 ├── css/
 │   └── styles.css           # 主要樣式檔案
 ├── js/
-│   └── app.js              # 主要 JavaScript 應用邏輯
+│   ├── app.js              # 主要 JavaScript 應用邏輯
+│   └── resource-loader.js  # CDN 資源載入器
 ├── lib/
 │   ├── fonts/              # 字體檔案
 │   ├── pako.min.js         # 數據壓縮庫
@@ -56,13 +58,25 @@ dematel-survey/
 
 ## 🛠️ 技術架構
 
-- **前端框架**：原生 JavaScript (ES6+)
-- **樣式**：CSS3 + CSS Variables
-- **數據壓縮**：Pako (deflate/inflate)
-- **QR Code**：QRCode.js
-- **字體**：Noto Sans TC (繁體中文)
+- **前端框架**：原生 JavaScript (ES6+)，基於 Class 架構設計
+- **樣式**：CSS3 + CSS Variables，BEM 命名規範
+- **數據壓縮**：Pako (deflate/inflate) + 自動縮短演算法
+- **QR Code**：QRCode.js，支援分段生成
+- **字體**：Noto Sans TC (繁體中文)，透過 ResourceLoader 動態載入
+- **資源管理**：CDN 優先載入，本地容錯機制
+- **數據完整性**：SHA-256 雜湊驗證
 
 ## 📊 核心演算法
+
+### 資源載入系統
+- **CDN 優先策略**：優先使用 CDN 資源，失敗時自動容錯到本地檔案
+- **進度追蹤**：即時顯示載入進度和狀態
+- **智能重試**：自動重試機制，確保資源載入穩定性
+
+### 統一配置檢查機制
+- **MD5 雜湊比對**：自動檢測配置檔案變更
+- **版本控制**：支援配置版本管理和相容性檢查
+- **清空策略**：可設定強制清空或詢問模式
 
 ### 自動縮短壓縮演算法
 - 統計分析字串出現頻率
@@ -70,7 +84,7 @@ dematel-survey/
 - 支援鍵值對智能縮短
 
 ### QR Code 分段策略
-- 300字元安全容量限制
+- 800字元安全容量限制（經過測試優化）
 - 自動分段並標記順序
 - SHA-256 雜湊完整性驗證
 
@@ -94,8 +108,11 @@ dematel-survey/
 
 ```json
 {
-  "設定": {
-    "SCRIPT_URL": "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"
+  "settings": {
+    "script_url": "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec",
+    "force_clear_on_config_change": false,
+    "debug": false,
+    "config_version": 1
   }
 }
 ```

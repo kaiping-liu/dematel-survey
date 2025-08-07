@@ -1,4 +1,23 @@
-# DEMATEL 簡易問卷系統 – 全端規格 **v1.1**
+# DEM## 0. 前置欄位（快速回顧）
+| 面向### 1.1 載入與驗證
+1. **資源載入**：透過 `ResourceLoader` 優先使用 CDN，失敗時容錯到本地檔案。
+2. **載入設定**：透過 `fetch()` 讀取 JSON，加入時間戳避免快取。
+3. **統一配置檢查**：使用 `validateAnd|11 | 下載 JSON | 按鈕 spinner→blob 下載→恢復 | — | 檔名 `dematel-survey-SURVEYID.json` |
+|12 | 上傳 Google Sheet | 按鈕顯示上傳中→API呼叫→成功提示 | — | 使用 `script_url` 設定 |
+|13 | 產生 QR | 多張 QR fade‑in；顯示 i/n | — | 每片 ≤ 800 char (Base64) |
+|14 | 🐞 Debug | Panel slide-up；顯示 JSON dump | — | 清空後 `location.reload()` |ateConfig()` 進行配置驗證和 MD5 比對。
+4. **Schema 驗證**：
+   - `settings`, `說明`, `基本資料`, `架構` 欄位缺一即拋錯。
+   - 每個 `dimension` 至少 2 個 `criteria`；否則停止並提示 *設計不合法*。
+   - 檢查所有 `code` 唯一性（構面、準則各自獨立 Name‑Space）。
+5. **雜湊計算**：以 MD5 生成 `dataHash`→ 比對 `localStorage.dematel_data_hash`，若不同則 `clearAll()`。
+|------|------|
+| 架構 | 純前端 SPA，HTML／CSS／Vanilla JS，可離線。 |
+| 執行環境 | ES2020+ 現代瀏覽器（Chrome 94+、Safari 15+…）。 |
+| 主要外掛 | QRCode.js、pako（gzip）、resource-loader（CDN容錯）。 |
+| 暫存 | `localStorage`，依 `dataHash` 控制版本。 |
+| 資源載入 | CDN 優先策略，本地容錯機制。 |
+| 配置管理 | 統一配置檢查機制，MD5 雜湊比對。 |問卷系統 – 全端規格 **v1.1**
 
 本版本聚焦在三大主題：**(1) 問卷產生邏輯**、**(2) UI 設計邏輯**、**(3) 使用操作邏輯**，其他章節維持概要層級，以免分散閱讀重點。
 
@@ -26,7 +45,7 @@
 
 ### 1.2 產生流程 Pipeline
 ```
-<JSON> → validate() →
+<JSON> → validateAndUpdateConfig() →
   ├─ genCriteriaPairs()  // 每構面內
   ├─ genDimensionPairs() // 構面之間
   └─ assembleQuestions() // 決定排序／雜湊
@@ -69,6 +88,7 @@
 ### 2.1 架構分層
 ```
 <body>
+ ├─ resource-loader (init)  // CDN 資源載入畫面
  ├─ app-shell               // fixed header + progress bar
  ├─ view-container          // 依 phase 切換內容
  │    ├─ view--intro
