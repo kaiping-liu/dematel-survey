@@ -2024,6 +2024,9 @@ class DEMATELSurvey {
         // 更新按鈕狀態
         this.updateButtonStates();
         
+        // 檢查是否應該顯示提示 - 只有當至少有一個項目有舉例時才顯示
+        this.updateQuestionHint(question);
+        
         // 調試：檢查下一題按鈕狀態
         if (typeof window !== 'undefined' && window.location.search.includes('debug')) {
             console.log('=== 問題視圖更新調試 ===');
@@ -2120,6 +2123,26 @@ class DEMATELSurvey {
             document.body.appendChild(tempElement);
             tempElement.focus();
             document.body.removeChild(tempElement);
+        }
+    }
+
+    /**
+     * 更新問題提示的顯示狀態
+     * 只有當至少有一個項目有舉例說明時才顯示提示
+     */
+    updateQuestionHint(question) {
+        const hintElement = document.getElementById('questionHint');
+        if (!hintElement) return;
+        
+        // 檢查兩個項目是否有舉例
+        const leftHasExamples = question.itemA.examples && question.itemA.examples.length > 0;
+        const rightHasExamples = question.itemB.examples && question.itemB.examples.length > 0;
+        
+        // 只有當至少有一個項目有舉例時才顯示提示
+        if (leftHasExamples || rightHasExamples) {
+            hintElement.style.display = 'block';
+        } else {
+            hintElement.style.display = 'none';
         }
     }
 

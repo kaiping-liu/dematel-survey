@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>DEMATEL 問卷</title>
     <!-- 字體將通過資源載入器動態載入 -->
     <script>
@@ -46,7 +46,7 @@
                 <div class="intro-card__content" id="introContent">
                     請稍候，系統正在初始化...
                 </div>
-<button class="btn btn--primary btn--full-width" id="startBtn" disabled tabindex="-1">
+                <button class="btn btn--primary btn--full-width" id="startBtn" disabled tabindex="-1">
                     開始填寫
                 </button>
             </div>
@@ -61,7 +61,7 @@
                         <!-- 動態生成基本資料欄位 -->
                     </div>
                     <div class="basic-form__actions">
-<button type="submit" class="btn btn--primary btn--full-width" id="nextToQuestionBtn" tabindex="-1">開始問卷</button>
+                        <button type="submit" class="btn btn--primary btn--full-width" id="nextToQuestionBtn" tabindex="-1">開始問卷</button>
                     </div>
                 </form>
             </div>
@@ -72,6 +72,7 @@
             <div class="question-card">
                 <div class="question-card__header">
                     <div class="question-card__type" id="questionType">XXX 比較</div>
+                    <div class="question-card__hint" id="questionHint" style="display: none;">點擊卡片顯示舉例說明</div>
                 </div>
                 
                 <div class="question-card__content">
