@@ -790,6 +790,23 @@ body {
   z-index: 5;
 }
 
+/* 評估兩者關係區塊 */
+.question-pair__evaluation {
+  width: 100%;
+  padding-top: var(--spacing-md);
+  margin-top: var(--spacing-md);
+  border-top: 2px solid var(--clr-main);
+}
+
+.evaluation-text {
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: var(--clr-text-primary);
+  text-align: center;
+  margin: 0;
+  padding-left: var(--spacing-sm);
+}
+
 .question-pair__controls {
   width: 100%;
   max-width: 800px; /* 增加最大寬度 */
@@ -887,11 +904,11 @@ body {
 }
 
 .direction-btn__text {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   font-weight: 500;
   word-break: break-word;
   hyphens: auto;
-  line-height: 1.4;
+  line-height: 2;
   order: 2;
 }
 

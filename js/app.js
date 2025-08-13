@@ -1520,8 +1520,8 @@ class DEMATELSurvey {
                 break;
             case 'bi':
                 modalTitle.textContent = `請選擇影響程度`;
-                scoreLabel1.textContent = `${leftName} 對 ${rightName}`;
-                scoreLabel2.textContent = `${rightName} 對 ${leftName}`;
+                scoreLabel1.textContent = `${leftName} 影響 ${rightName}`;
+                scoreLabel2.textContent = `${rightName} 影響 ${leftName}`;
                 scoreGroup2.style.display = 'block';
                 break;
         }
